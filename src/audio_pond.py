@@ -16,8 +16,11 @@ os.environ["CUDA_DEVICE_ORDER"] = (
 import click
 import yt_dlp
 import tensorflow as tf  # Import tensorflow to configure GPU
-from basic_pitch.inference import predict
+from basic_pitch.inference import predict_and_save, Model
+from basic_pitch import ICASSP_2022_MODEL_PATH
 from pydub import AudioSegment
+
+basic_pitch_model = Model(ICASSP_2022_MODEL_PATH)
 
 
 def setup_gpu():
@@ -75,14 +78,19 @@ class AudioProcessor:
     def transcribe_audio(self, audio_path: Path):
         """Transcribe audio to MIDI and LilyPond."""
         # Transcribe audio to MIDI using Basic Pitch
-        model_output = predict(str(audio_path))
 
-        # Save MIDI file
-        midi_path = self.output_dir / "output.midi"
-        model_output.midi.write(str(midi_path))
+        predict_and_save(
+            [str(audio_path)],
+            str(self.output_dir),
+            True,
+            True,
+            False,
+            False,
+            basic_pitch_model,
+        )
 
         # Convert MIDI to LilyPond using midi2ly
-        self._midi_to_lilypond(midi_path)
+        self._midi_to_lilypond(self.output_dir / "output_basic_pitch.midi")
 
     def _midi_to_lilypond(self, midi_path: Path):
         """Convert MIDI to LilyPond notation using midi2ly."""
@@ -121,11 +129,11 @@ class AudioProcessor:
 
         # Insert header after version declaration
         header = r"""
-                \header {
-                  title = "Transcribed Piano Performance"
-                  tagline = ##f  % Remove default LilyPond tagline
-                }
-                """
+\header {
+  title = "Transcribed Piano Performance"
+  tagline = ##f  % Remove default LilyPond tagline
+}
+"""
         content = content.replace(r"\version", header + r"\version")
 
         with open(ly_path, "w") as f:
