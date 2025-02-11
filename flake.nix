@@ -15,7 +15,7 @@
         default = pkgs.mkShell {
           venvDir = ".venv";
           packages = with pkgs;
-            [ python311 stdenv.cc.cc.lib makeWrapper ]
+            [ yt-dlp ffmpeg lilypond python311 stdenv.cc.cc.lib makeWrapper ]
             ++ (with pkgs.python311Packages; [ uv ruff ]);
 
           shellHook = ''
