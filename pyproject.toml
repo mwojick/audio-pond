@@ -1,5 +1,9 @@
 [project]
 name = "audio-pond"
 version = "1.0.0"
+description = "Convert piano performances into professional sheet music"
+authors = []
+readme = "README.md"
+requires-python = ">=3.11"
 
-dependencies = ["basic-pitch"]
+dependencies = ["basic-pitch", "click", "pydub", "yt-dlp", "llvmlite==0.44.0"]
