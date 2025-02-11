@@ -6,4 +6,12 @@ authors = []
 readme = "README.md"
 requires-python = ">=3.11"
 
-dependencies = ["basic-pitch", "click", "pydub", "yt-dlp", "llvmlite==0.44.0"]
+dependencies = [
+    "ipykernel",
+    "basic-pitch",
+    "click",
+    "pydub",
+    "yt-dlp",
+    "llvmlite==0.44.0",
+    "tensorflow[and-cuda]",
+]

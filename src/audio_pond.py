@@ -6,17 +6,46 @@ import os
 import subprocess
 from pathlib import Path
 from typing import Optional
+import logging
+
+# Configure TensorFlow GPU settings
+os.environ["CUDA_DEVICE_ORDER"] = (
+    "PCI_BUS_ID"  # Use PCI_BUS_ID for consistent GPU device ordering
+)
 
 import click
 import yt_dlp
+import tensorflow as tf  # Import tensorflow to configure GPU
 from basic_pitch.inference import predict
 from pydub import AudioSegment
+
+
+def setup_gpu():
+    """Configure and verify GPU setup."""
+    try:
+        gpus = tf.config.list_physical_devices("GPU")
+        if not gpus:
+            logging.warning(
+                "No GPU devices found. To enable GPU support, please install:\n"
+                "1. NVIDIA GPU drivers (>= 525.60.13)\n"
+                "2. CUDA Toolkit 12.3\n"
+                "3. cuDNN SDK 8.9.7\n"
+                "For now, falling back to CPU."
+            )
+            return False
+
+        logging.info(f"GPU setup successful. Found {len(gpus)} GPU(s)")
+        return True
+    except Exception as e:
+        logging.warning(f"Failed to configure GPU: {str(e)}")
+        return False
 
 
 class AudioProcessor:
     def __init__(self, output_dir: Path):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
+        self.gpu_available = setup_gpu()
 
     def process_youtube(self, url: str) -> Path:
         """Download YouTube video and extract audio."""
