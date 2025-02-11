@@ -1,0 +1,5 @@
+[project]
+name = "audio-pond"
+version = "1.0.0"
+
+dependencies = ["basic-pitch"]
