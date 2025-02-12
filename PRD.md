@@ -38,11 +38,12 @@ python src/audio_pond.py --midi-file path/to/midi/file
 - **Environment Management**: Nix + direnv
 - **Package Management**: uv
 - **Core Dependencies**:
-  - yt-dlp (video download)
-  - piano-transcription-inference (audio transcription)
-  - torch (GPU acceleration)
-  - lilypond (midi to lilypond conversion)
-  - ffmpeg (audio processing)
+  - [yt-dlp](https://github.com/yt-dlp/yt-dlp) (video download)
+  - [piano-transcription-inference](https://github.com/qiuqiangkong/piano_transcription_inference) (audio transcription)
+  - [torch](https://github.com/pytorch/pytorch) (GPU acceleration)
+  - [MidiToLily](https://github.com/victimofleisure/MidiToLily) (midi to lilypond conversion)
+  - [lilypond](https://lilypond.org/) (lilypond to sheet music)
+  - [ffmpeg](https://ffmpeg.org/) (audio processing)
 
 ### Output Files
 

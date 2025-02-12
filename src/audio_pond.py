@@ -1,7 +1,3 @@
-"""
-Audio Pond - Convert piano performances into professional sheet music.
-"""
-
 import os
 import subprocess
 from pathlib import Path
@@ -12,6 +8,10 @@ import torch
 import librosa
 from pydub import AudioSegment
 from piano_transcription_inference import PianoTranscription, sample_rate
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -40,8 +40,13 @@ def setup_gpu():
 
 
 class AudioProcessor:
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path, midi2lily_path: str | None = None):
         self.output_dir = output_dir
+        self.midi2lily_path = midi2lily_path or os.getenv("MIDI2LILY_PATH")
+        if not self.midi2lily_path:
+            raise ValueError(
+                "MidiToLily path not provided. Set it via MIDI2LILY_PATH environment variable or --midi2lily-path option"
+            )
         os.makedirs(output_dir, exist_ok=True)
 
     def process_youtube(self, url: str) -> Path:
@@ -91,32 +96,36 @@ class AudioProcessor:
         print(transcribed_dict)
 
     def midi_to_lilypond(self, midi_path: Path):
-        """Convert MIDI to LilyPond notation using midi2ly."""
+        """Convert MIDI to LilyPond notation using https://github.com/victimofleisure/MidiToLily."""
+
+        midi_path = midi_path or self.output_dir / "out.mid"
         try:
-            # Run midi2ly to convert MIDI to LilyPond
-            # Options:
-            # -o: output file
+            # Run MidiToLily to convert MIDI to LilyPond
             subprocess.run(
                 [
-                    "midi2ly",
-                    "-o",
-                    str(self.output_dir / "out.ly"),
+                    # Path to MidiToLily executable
+                    self.midi2lily_path,
                     str(midi_path),
+                    "-quant",
+                    "16",
+                    "-output",
+                    str(self.output_dir / "output.ly"),
                 ],
                 check=True,
                 capture_output=True,
                 text=True,
             )
         except subprocess.CalledProcessError as e:
+            logging.error(f"MidiToLily output: {e.stdout}")
             raise RuntimeError(f"Failed to convert MIDI to LilyPond: {e.stderr}")
         except FileNotFoundError:
             raise RuntimeError(
-                "midi2ly not found. Please make sure LilyPond is installed and available in PATH."
+                "MidiToLily not found. Please make sure LilyPond is installed and available in PATH."
             )
 
     def render_sheet_music(self):
         """Render LilyPond file to PDF."""
-        ly_path = self.output_dir / "out.ly"
+        ly_path = self.output_dir / "output.ly"
         if not ly_path.exists():
             raise FileNotFoundError("LilyPond file not found. Run transcription first.")
 
@@ -152,9 +161,20 @@ class AudioProcessor:
     default="./output",
     help="Directory for output files",
 )
-def main(source: str, audio_file: bool, midi_file: bool, output_dir: str):
+@click.option(
+    "--midi2lily-path",
+    type=click.Path(),
+    help="Path to MidiToLily executable (defaults to MIDI2LILY_PATH env var)",
+)
+def main(
+    source: str,
+    audio_file: bool,
+    midi_file: bool,
+    output_dir: str,
+    midi2lily_path: str | None,
+):
     """Convert piano performances into sheet music."""
-    processor = AudioProcessor(Path(output_dir))
+    processor = AudioProcessor(Path(output_dir), midi2lily_path=midi2lily_path)
 
     try:
         if midi_file:

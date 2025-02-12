@@ -169,6 +169,8 @@ python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   matplotlib
+python-dotenv==1.0.1
+    # via audio-pond (pyproject.toml)
 pyzmq==26.2.1
     # via
     #   ipykernel
