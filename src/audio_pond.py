@@ -6,12 +6,6 @@ import os
 import subprocess
 from pathlib import Path
 import logging
-
-# Configure TensorFlow GPU settings
-os.environ["CUDA_DEVICE_ORDER"] = (
-    "PCI_BUS_ID"  # Use PCI_BUS_ID for consistent GPU device ordering
-)
-
 import click
 import yt_dlp
 import torch
@@ -19,16 +13,26 @@ import librosa
 from pydub import AudioSegment
 from piano_transcription_inference import PianoTranscription, sample_rate
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Configure TensorFlow GPU settings
+os.environ["CUDA_DEVICE_ORDER"] = (
+    "PCI_BUS_ID"  # Use PCI_BUS_ID for consistent GPU device ordering
+)
+
 
 def setup_gpu():
     """Configure and verify GPU setup."""
     try:
-        gpus = torch.cuda.device_count()
-        if not gpus:
+        num_gpus = torch.cuda.device_count()
+        if not num_gpus:
             logging.warning("No GPU devices found. For now, falling back to CPU.")
             return False
 
-        logging.info(f"GPU setup successful. Found {len(gpus)} GPU(s)")
+        logging.info(f"GPU setup successful. Found {num_gpus} GPU(s)")
         return True
     except Exception as e:
         logging.warning(f"Failed to configure GPU: {str(e)}")
@@ -39,7 +43,6 @@ class AudioProcessor:
     def __init__(self, output_dir: Path):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        self.gpu_available = setup_gpu()
 
     def process_youtube(self, url: str) -> Path:
         """Download YouTube video and extract audio."""
@@ -69,12 +72,16 @@ class AudioProcessor:
     def transcribe_audio(self, audio_path: Path):
         """Transcribe audio to MIDI using Piano Transcription Inference"""
 
+        # Setup GPU for transcription
+        gpu_available = setup_gpu()
+        device = "cuda" if gpu_available else "cpu"
+
         # Load audio
         audio, _ = librosa.load(path=audio_path, sr=sample_rate, mono=True)
 
         # Transcriptor
         transcriptor = PianoTranscription(
-            device="cuda", checkpoint_path=None
+            device=device, checkpoint_path=None
         )  # device: 'cuda' | 'cpu'
 
         # Transcribe and write out to MIDI file
@@ -135,24 +142,33 @@ class AudioProcessor:
     "--audio-file", is_flag=True, help="Process local audio file instead of YouTube URL"
 )
 @click.option(
+    "--midi-file",
+    is_flag=True,
+    help="Process local MIDI file directly, skipping transcription",
+)
+@click.option(
     "--output-dir",
     type=click.Path(),
     default="./output",
     help="Directory for output files",
 )
-def main(source: str, audio_file: bool, output_dir: str):
+def main(source: str, audio_file: bool, midi_file: bool, output_dir: str):
     """Convert piano performances into sheet music."""
     processor = AudioProcessor(Path(output_dir))
 
     try:
-        if audio_file:
-            audio_path = processor.process_audio_file(Path(source))
+        if midi_file:
+            midi_path = Path(source)
         else:
-            audio_path = processor.process_youtube(source)
+            if audio_file:
+                audio_path = processor.process_audio_file(Path(source))
+            else:
+                audio_path = processor.process_youtube(source)
 
-        processor.transcribe_audio(audio_path)
-        # Convert MIDI to LilyPond using midi2ly
-        processor.midi_to_lilypond(processor.output_dir / "out.mid")
+            processor.transcribe_audio(audio_path)
+            midi_path = processor.output_dir / "out.mid"
+
+        processor.midi_to_lilypond(midi_path)
         processor.render_sheet_music()
 
         click.echo(f"Sheet music has been generated in {output_dir}")

@@ -6,13 +6,17 @@ Audio Pond is a command-line tool that converts piano performances (from YouTube
 
 ## 2. User Stories
 
-### Primary Use Case
+### First Use Case
 
-As a musician I want to convert piano performances from YouTube into sheet music so that I can study and play the pieces myself
+As a musician I want to convert piano performances from YouTube into lilypond and sheet music
 
-### Secondary Use Case
+### Second Use Case
 
-As a musician I want to convert my own piano audio recordings into sheet music so that I can document and share my compositions
+As a musician I want to convert my own piano audio into lilypond and sheet music
+
+### Third Use Case
+
+As a musician I want to convert already existing MIDI files into lilypond and sheet music
 
 ## 3. Technical Specifications
 
@@ -20,10 +24,13 @@ As a musician I want to convert my own piano audio recordings into sheet music s
 
 ```bash
 # Primary usage (YouTube)
-python audio-pond.py https://www.youtube.com/...
+python src/audio_pond.py https://www.youtube.com/...
 
 # Alternative usage (local audio)
-python audio-pond.py --audio-file path/to/audio/file
+python src/audio_pond.py --audio-file path/to/audio/file
+
+# Alternative usage (local MIDI)
+python src/audio_pond.py --midi-file path/to/midi/file
 ```
 
 ### Technology Stack
@@ -32,8 +39,9 @@ python audio-pond.py --audio-file path/to/audio/file
 - **Package Management**: uv
 - **Core Dependencies**:
   - yt-dlp (video download)
-  - basic-pitch (audio transcription)
-  - lilypond (music notation)
+  - piano-transcription-inference (audio transcription)
+  - torch (GPU acceleration)
+  - lilypond (midi to lilypond conversion)
   - ffmpeg (audio processing)
 
 ### Output Files
@@ -42,6 +50,5 @@ For each conversion, the following files will be generated:
 
 - `output.wav` (extracted audio from YouTube video)
 - `output.midi` (transcribed MIDI)
-- `output_midi.wav` (MIDI audio rendering)
 - `output.ly` (LilyPond notation)
 - `output.pdf` (sheet music)
