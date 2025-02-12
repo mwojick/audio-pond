@@ -5,7 +5,6 @@ Audio Pond - Convert piano performances into professional sheet music.
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
 import logging
 
 # Configure TensorFlow GPU settings
@@ -15,26 +14,18 @@ os.environ["CUDA_DEVICE_ORDER"] = (
 
 import click
 import yt_dlp
-import tensorflow as tf  # Import tensorflow to configure GPU
-from basic_pitch.inference import predict_and_save, Model
-from basic_pitch import ICASSP_2022_MODEL_PATH
+import torch
+import librosa
 from pydub import AudioSegment
-
-basic_pitch_model = Model(ICASSP_2022_MODEL_PATH)
+from piano_transcription_inference import PianoTranscription, sample_rate
 
 
 def setup_gpu():
     """Configure and verify GPU setup."""
     try:
-        gpus = tf.config.list_physical_devices("GPU")
+        gpus = torch.cuda.device_count()
         if not gpus:
-            logging.warning(
-                "No GPU devices found. To enable GPU support, please install:\n"
-                "1. NVIDIA GPU drivers (>= 525.60.13)\n"
-                "2. CUDA Toolkit 12.3\n"
-                "3. cuDNN SDK 8.9.7\n"
-                "For now, falling back to CPU."
-            )
+            logging.warning("No GPU devices found. For now, falling back to CPU.")
             return False
 
         logging.info(f"GPU setup successful. Found {len(gpus)} GPU(s)")
@@ -76,39 +67,33 @@ class AudioProcessor:
         return output_path
 
     def transcribe_audio(self, audio_path: Path):
-        """Transcribe audio to MIDI and LilyPond."""
-        # Transcribe audio to MIDI using Basic Pitch
+        """Transcribe audio to MIDI using Piano Transcription Inference"""
 
-        predict_and_save(
-            [str(audio_path)],
-            str(self.output_dir),
-            True,
-            True,
-            False,
-            False,
-            basic_pitch_model,
+        # Load audio
+        audio, _ = librosa.load(path=audio_path, sr=sample_rate, mono=True)
+
+        # Transcriptor
+        transcriptor = PianoTranscription(
+            device="cuda", checkpoint_path=None
+        )  # device: 'cuda' | 'cpu'
+
+        # Transcribe and write out to MIDI file
+        transcribed_dict = transcriptor.transcribe(
+            audio, str(self.output_dir / "out.mid")
         )
+        print(transcribed_dict)
 
-        # Convert MIDI to LilyPond using midi2ly
-        self._midi_to_lilypond(self.output_dir / "output_basic_pitch.midi")
-
-    def _midi_to_lilypond(self, midi_path: Path):
+    def midi_to_lilypond(self, midi_path: Path):
         """Convert MIDI to LilyPond notation using midi2ly."""
         try:
             # Run midi2ly to convert MIDI to LilyPond
             # Options:
-            # -s 1: set staff size to 1 (default)
-            # -k 0: no key signature guessing
             # -o: output file
             subprocess.run(
                 [
                     "midi2ly",
-                    "-s",
-                    "1",
-                    "-k",
-                    "0",
                     "-o",
-                    str(self.output_dir / "output.ly"),
+                    str(self.output_dir / "out.ly"),
                     str(midi_path),
                 ],
                 check=True,
@@ -122,33 +107,16 @@ class AudioProcessor:
                 "midi2ly not found. Please make sure LilyPond is installed and available in PATH."
             )
 
-        # Add title and remove default tagline
-        ly_path = self.output_dir / "output.ly"
-        with open(ly_path, "r") as f:
-            content = f.read()
-
-        # Insert header after version declaration
-        header = r"""
-\header {
-  title = "Transcribed Piano Performance"
-  tagline = ##f  % Remove default LilyPond tagline
-}
-"""
-        content = content.replace(r"\version", header + r"\version")
-
-        with open(ly_path, "w") as f:
-            f.write(content)
-
     def render_sheet_music(self):
         """Render LilyPond file to PDF."""
-        ly_path = self.output_dir / "output.ly"
+        ly_path = self.output_dir / "out.ly"
         if not ly_path.exists():
             raise FileNotFoundError("LilyPond file not found. Run transcription first.")
 
         try:
             # Run lilypond to generate PDF
             subprocess.run(
-                ["lilypond", "-o", str(self.output_dir / "output"), str(ly_path)],
+                ["lilypond", "-o", str(self.output_dir / "outly"), str(ly_path)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -183,6 +151,8 @@ def main(source: str, audio_file: bool, output_dir: str):
             audio_path = processor.process_youtube(source)
 
         processor.transcribe_audio(audio_path)
+        # Convert MIDI to LilyPond using midi2ly
+        processor.midi_to_lilypond(processor.output_dir / "out.mid")
         processor.render_sheet_music()
 
         click.echo(f"Sheet music has been generated in {output_dir}")
