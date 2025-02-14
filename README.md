@@ -17,8 +17,8 @@ cd audio-pond
 # Make sure direnv and nix-direnv are installed before running this
 direnv allow
 
-# Compile and install dependencies with [uv](https://github.com/astral-sh/uv)
-uv pip compile pyproject.toml -o requirements.txt && uv pip install -r requirements.txt
+# Install dependencies with [uv](https://github.com/astral-sh/uv)
+uv pip install -r requirements.txt
 ```
 
 3. Download MidiToLily from https://github.com/victimofleisure/MidiToLily/releases
