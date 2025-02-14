@@ -21,6 +21,10 @@ direnv allow
 uv pip compile pyproject.toml -o requirements.txt && uv pip install -r requirements.txt
 ```
 
+3. Download MidiToLily from https://github.com/victimofleisure/MidiToLily/releases
+
+4. Create `.env` file with `MIDI2LILY_PATH` set to the path of the MidiToLily executable
+
 ## Usage
 
 ### Convert from YouTube:
