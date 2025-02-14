@@ -2,7 +2,7 @@
 
 Convert piano performances from YouTube or audio files into lilypond files and sheet music.
 
-## Installation
+## Development
 
 1. Clone this repository:
 
@@ -59,4 +59,12 @@ For each conversion, the following files will be generated in the output directo
 - `4_sheet_music.pdf`: Sheet music
 - `4_sheet_music.midi`: Sheet music in MIDI format
 
-### To inspect MIDI quality: https://signal.vercel.app/edit
+To inspect MIDI quality: https://signal.vercel.app/edit
+
+## Tools Used
+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) (video download)
+- [piano-transcription-inference](https://github.com/qiuqiangkong/piano_transcription_inference) (audio transcription)
+- [mido](https://github.com/mido/mido) (midi processing)
+- [MidiToLily](https://github.com/victimofleisure/MidiToLily) (midi to lilypond conversion)
+- [lilypond](https://lilypond.org/) (lilypond to sheet music)
