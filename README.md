@@ -46,14 +46,17 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 - `--audio-file`: Process a local audio file instead of YouTube URL
 - `--midi-file`: Process a local MIDI file instead of transcribing from audio
 - `--output-dir`: Specify output directory (default: ./output)
+- `--trim-start`: Trim silence from start of MIDI file before conversion
 
 ## Output Files
 
 For each conversion, the following files will be generated in the output directory:
 
-- `output.wav`: Extracted audio from source
-- `output.midi`: Transcribed MIDI
-- `output.ly`: LilyPond notation
-- `output.pdf`: Sheet music
+- `1_raw_audio.wav`: Extracted audio from source
+- `2_transcription.midi`: Transcribed MIDI
+- `2_transcription_trimmed.midi`: Transcribed MIDI with initial silence removed
+- `3_lilypond.ly`: LilyPond notation
+- `4_sheet_music.pdf`: Sheet music
+- `4_sheet_music.midi`: Sheet music in MIDI format
 
 ### To inspect MIDI quality: https://signal.vercel.app/edit
