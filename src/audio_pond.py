@@ -59,22 +59,23 @@ class AudioProcessor:
                     "preferredcodec": "wav",
                 }
             ],
-            "outtmpl": str(self.output_dir / "output.%(ext)s"),
+            "outtmpl": str(self.output_dir / "1_raw_audio.%(ext)s"),
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            ytdlp = ydl.download([url])
+            print(ytdlp)
 
-        return self.output_dir / "output.wav"
+        return self.output_dir / "1_raw_audio.wav"
 
     def process_audio_file(self, audio_path: Path) -> Path:
         """Process local audio file to WAV format."""
-        output_path = self.output_dir / "output.wav"
+        audio_output_path = self.output_dir / "1_raw_audio.wav"
         audio = AudioSegment.from_file(str(audio_path))
-        audio.export(str(output_path), format="wav")
-        return output_path
+        audio.export(str(audio_output_path), format="wav")
+        return audio_output_path
 
-    def transcribe_audio(self, audio_path: Path):
+    def transcribe_audio(self, audio_path: Path) -> Path:
         """Transcribe audio to MIDI using Piano Transcription Inference"""
 
         # Setup GPU for transcription
@@ -89,17 +90,18 @@ class AudioProcessor:
             device=device, checkpoint_path=None
         )  # device: 'cuda' | 'cpu'
 
-        # Transcribe and write out to MIDI file
-        transcribed_dict = transcriptor.transcribe(
-            audio, str(self.output_dir / "out.mid")
-        )
-        print(transcribed_dict)
+        midi_output_path = self.output_dir / "2_transcription.midi"
 
-    def midi_to_lilypond(self, midi_path: Path):
+        # Transcribe and write out to MIDI file
+        transcribed_dict = transcriptor.transcribe(audio, str(midi_output_path))
+        print(transcribed_dict)
+        return midi_output_path
+
+    def midi_to_lilypond(self, midi_path: Path) -> Path:
         """Convert MIDI to LilyPond notation using https://github.com/victimofleisure/MidiToLily."""
 
-        midi_path = midi_path or self.output_dir / "out.mid"
         try:
+            ly_output_path = self.output_dir / "3_lilypond.ly"
             # Run MidiToLily to convert MIDI to LilyPond
             subprocess.run(
                 [
@@ -108,13 +110,20 @@ class AudioProcessor:
                     str(midi_path),
                     "-quant",
                     "16",
+                    "-time",
+                    "1=4/4",
+                    "-key",
+                    "1=g,29=c",
+                    "-staves",
+                    "1",
                     "-output",
-                    str(self.output_dir / "output.ly"),
+                    str(ly_output_path),
                 ],
                 check=True,
                 capture_output=True,
                 text=True,
             )
+            return ly_output_path
         except subprocess.CalledProcessError as e:
             logging.error(f"MidiToLily output: {e.stdout}")
             raise RuntimeError(f"Failed to convert MIDI to LilyPond: {e.stderr}")
@@ -123,16 +132,20 @@ class AudioProcessor:
                 "MidiToLily not found. Please make sure LilyPond is installed and available in PATH."
             )
 
-    def render_sheet_music(self):
+    def render_sheet_music(self, ly_path: Path):
         """Render LilyPond file to PDF."""
-        ly_path = self.output_dir / "output.ly"
         if not ly_path.exists():
             raise FileNotFoundError("LilyPond file not found. Run transcription first.")
 
         try:
             # Run lilypond to generate PDF
             subprocess.run(
-                ["lilypond", "-o", str(self.output_dir / "outly"), str(ly_path)],
+                [
+                    "lilypond",
+                    "-o",
+                    str(self.output_dir / "4_sheet_music"),
+                    str(ly_path),
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -185,11 +198,10 @@ def main(
             else:
                 audio_path = processor.process_youtube(source)
 
-            processor.transcribe_audio(audio_path)
-            midi_path = processor.output_dir / "out.mid"
+            midi_path = processor.transcribe_audio(audio_path)
 
-        processor.midi_to_lilypond(midi_path)
-        processor.render_sheet_music()
+        ly_path = processor.midi_to_lilypond(midi_path)
+        processor.render_sheet_music(ly_path)
 
         click.echo(f"Sheet music has been generated in {output_dir}")
 
