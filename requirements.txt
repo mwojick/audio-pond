@@ -72,7 +72,9 @@ matplotlib-inline==0.1.7
     #   ipykernel
     #   ipython
 mido==1.3.3
-    # via piano-transcription-inference
+    # via
+    #   audio-pond (pyproject.toml)
+    #   piano-transcription-inference
 mpmath==1.3.0
     # via sympy
 msgpack==1.1.0

@@ -15,4 +15,5 @@ dependencies = [
     "piano-transcription-inference",
     "torch",
     "python-dotenv",
+    "mido",
 ]
