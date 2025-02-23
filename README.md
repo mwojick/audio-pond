@@ -47,11 +47,15 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 
 ### Options:
 
+- `--help`: Show help
 - `--audio-file`: Process a local audio file instead of YouTube URL
 - `--midi-file`: Process a local MIDI file instead of transcribing from audio
 - `--output-dir`: Specify output directory (default: ./output)
 - `--trim-start`: Trim silence from start of MIDI file before conversion
 - `--split-tracks`: Split MIDI file into treble and bass tracks
+- `--time`: Time signature for LilyPond output
+- `--key`: Key signature for LilyPond output
+- `--quant`: Quantization value for LilyPond output
 
 ## Output Files
 
