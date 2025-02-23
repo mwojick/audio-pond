@@ -9,7 +9,7 @@ import librosa
 from pydub import AudioSegment
 from piano_transcription_inference import PianoTranscription, sample_rate
 from dotenv import load_dotenv
-from mido import MidiFile
+from mido import MidiFile, MidiTrack
 
 # Load environment variables from .env file
 load_dotenv()
@@ -100,7 +100,6 @@ class AudioProcessor:
 
     def trim_midi_silence(self, midi_path: Path) -> Path:
         """Remove initial silence from MIDI file."""
-        output_path = self.output_dir / "2_transcription_trimmed.midi"
 
         # Load the file
         mid = MidiFile(str(midi_path))
@@ -137,7 +136,78 @@ class AudioProcessor:
                 prev = abs_times[i]
 
         # Save the trimmed MIDI file
+        output_path = self.output_dir / "2_transcription_trimmed.midi"
         mid.save(str(output_path))
+
+        return output_path
+
+    def split_midi_tracks(self, midi_path: Path) -> Path:
+        """Split MIDI file into 2 tracks."""
+
+        # Load your single-track MIDI file.
+        mid = MidiFile(str(midi_path))
+
+        # Prepare new MidiFile with two tracks.
+        new_mid = MidiFile()
+        treble_track = MidiTrack()
+        bass_track = MidiTrack()
+        new_mid.tracks.append(treble_track)
+        new_mid.tracks.append(bass_track)
+
+        # Convert the original track's delta times to absolute times.
+        orig_track = mid.tracks[0]
+        messages = []
+        abs_time = 0
+        for msg in orig_track:
+            abs_time += msg.time
+            messages.append((msg, abs_time))
+
+        # Split messages into treble and bass based on note number.
+        # (Here we assume bass clef gets notes with MIDI number < 60 and treble clef gets the rest.)
+        treble_msgs = []
+        bass_msgs = []
+        for msg, at in messages:
+            if msg.is_meta:
+                # Add meta messages to both tracks.
+                treble_msgs.append((msg.copy(), at))
+                bass_msgs.append((msg.copy(), at))
+            elif msg.type in ("note_on", "note_off") and hasattr(msg, "note"):
+                # Move notes below C4 to bass track, rest to treble
+                if msg.note < 60:
+                    bass_msgs.append((msg.copy(), at))
+                else:
+                    treble_msgs.append((msg.copy(), at))
+            else:
+                # For other non-note messages, include them in both tracks.
+                treble_msgs.append((msg.copy(), at))
+                bass_msgs.append((msg.copy(), at))
+
+        # Helper function to convert a list of (msg, abs_time) back to delta times.
+        def abs_to_delta(msgs):
+            msgs_sorted = sorted(msgs, key=lambda x: x[1])
+            new_msgs = []
+            prev = 0
+            for msg, at in msgs_sorted:
+                delta = at - prev
+                msg.time = delta
+                new_msgs.append(msg)
+                prev = at
+            return new_msgs
+
+        treble_new = abs_to_delta(treble_msgs)
+        bass_new = abs_to_delta(bass_msgs)
+
+        # Populate the new tracks.
+        treble_track.clear()
+        bass_track.clear()
+        for msg in treble_new:
+            treble_track.append(msg)
+        for msg in bass_new:
+            bass_track.append(msg)
+
+        # Save the new file.
+        output_path = self.output_dir / "2_transcription_split.midi"
+        new_mid.save(str(output_path))
 
         return output_path
 
@@ -228,6 +298,11 @@ class AudioProcessor:
     is_flag=True,
     help="Trim silence from start of MIDI file before conversion",
 )
+@click.option(
+    "--split-tracks",
+    is_flag=True,
+    help="Split MIDI file into treble and bass tracks",
+)
 def main(
     source: str,
     audio_file: bool,
@@ -235,6 +310,7 @@ def main(
     output_dir: str,
     midi2lily_path: str | None,
     trim_start: bool,
+    split_tracks: bool,
 ):
     """Convert piano performances into sheet music."""
     processor = AudioProcessor(Path(output_dir), midi2lily_path=midi2lily_path)
@@ -253,6 +329,9 @@ def main(
         # Trim silence before conversion
         if trim_start:
             midi_path = processor.trim_midi_silence(midi_path)
+
+        if split_tracks:
+            midi_path = processor.split_midi_tracks(midi_path)
 
         ly_path = processor.midi_to_lilypond(midi_path)
         processor.render_sheet_music(ly_path)

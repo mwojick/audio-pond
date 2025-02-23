@@ -51,6 +51,7 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 - `--midi-file`: Process a local MIDI file instead of transcribing from audio
 - `--output-dir`: Specify output directory (default: ./output)
 - `--trim-start`: Trim silence from start of MIDI file before conversion
+- `--split-tracks`: Split MIDI file into treble and bass tracks
 
 ## Output Files
 
@@ -59,6 +60,7 @@ For each conversion, the following files will be generated in the output directo
 - `1_raw_audio.wav`: Extracted audio from source
 - `2_transcription.midi`: Transcribed MIDI
 - `2_transcription_trimmed.midi`: Transcribed MIDI with initial silence removed
+- `2_transcription_split.midi`: Transcribed MIDI split into treble and bass tracks
 - `3_lilypond.ly`: LilyPond notation
 - `4_sheet_music.pdf`: Sheet music
 - `4_sheet_music.midi`: Sheet music in MIDI format
