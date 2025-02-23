@@ -254,7 +254,9 @@ class AudioProcessor:
 
         return output_path
 
-    def midi_to_lilypond(self, midi_path: Path) -> Path:
+    def midi_to_lilypond(
+        self, midi_path: Path, time: str, key: str, quant: str
+    ) -> Path:
         """Convert MIDI to LilyPond notation using https://github.com/victimofleisure/MidiToLily."""
 
         try:
@@ -266,11 +268,11 @@ class AudioProcessor:
                     self.midi2lily_path,
                     str(midi_path),
                     "-quant",
-                    "16",
+                    quant,
                     "-time",
-                    "1=4/4",
+                    time,
                     "-key",
-                    "1=g,29=c",
+                    key,
                     "-staves",
                     "1,2",
                     "-output",
@@ -346,6 +348,24 @@ class AudioProcessor:
     is_flag=True,
     help="Split MIDI file into treble and bass tracks",
 )
+@click.option(
+    "--time",
+    type=str,
+    default="1=4/4",
+    help="Comma-separated list of time signatures, each consisting of M=n/d where M is a one-based measure number, and n and d are the the time signature's numerator and denominator.",
+)
+@click.option(
+    "--key",
+    type=str,
+    default="1=c",
+    help="Comma-separated list of key signatures, each consisting of  M=k where M is a one-based measure number, and k is the key signature in LilyPond note format, optionally followed by the letter 'm' to indicate a minor key.",
+)
+@click.option(
+    "--quant",
+    type=str,
+    default="16",
+    help="Quantize note start and end times to the specified duration (1=whole, 2=half, 4=quarter, etc.)",
+)
 def main(
     source: str,
     audio_file: bool,
@@ -354,6 +374,9 @@ def main(
     midi2lily_path: str | None,
     trim_start: bool,
     split_tracks: bool,
+    time: str,
+    key: str,
+    quant: str,
 ):
     """Convert piano performances into sheet music."""
     processor = AudioProcessor(Path(output_dir), midi2lily_path=midi2lily_path)
@@ -376,7 +399,7 @@ def main(
         if split_tracks:
             midi_path = processor.split_midi_tracks(midi_path)
 
-        ly_path = processor.midi_to_lilypond(midi_path)
+        ly_path = processor.midi_to_lilypond(midi_path, time=time, key=key, quant=quant)
         processor.render_sheet_music(ly_path)
 
         click.echo(f"Sheet music has been generated in {output_dir}")
