@@ -32,7 +32,7 @@ Optional, in case wine doesn't work:
 ### Convert from YouTube:
 
 ```bash
-python src/audio_pond.py https://www.youtube.com/watch?v=your-video-id
+python src/audio_pond.py https://www.youtube.com/watch?v=your-video-id --trim-start --split-tracks --key 1=g,28=c
 ```
 
 ### Convert from local audio file:
