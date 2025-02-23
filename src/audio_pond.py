@@ -9,7 +9,7 @@ import librosa
 from pydub import AudioSegment
 from piano_transcription_inference import PianoTranscription, sample_rate
 from dotenv import load_dotenv
-from mido import MidiFile, MidiTrack
+from mido import MidiFile, MidiTrack, MetaMessage
 
 # Load environment variables from .env file
 load_dotenv()
@@ -144,68 +144,81 @@ class AudioProcessor:
     def split_midi_tracks(self, midi_path: Path) -> Path:
         """Split MIDI file into 2 tracks."""
 
-        # Load your single-track MIDI file.
+        # Load original single-track MIDI file.
         mid = MidiFile(str(midi_path))
 
-        # Prepare new MidiFile with two tracks.
+        # Create a new MidiFile and copy ticks_per_beat from the original.
         new_mid = MidiFile()
+        new_mid.ticks_per_beat = mid.ticks_per_beat
+
+        # We'll create two new tracks.
         treble_track = MidiTrack()
         bass_track = MidiTrack()
-        new_mid.tracks.append(treble_track)
-        new_mid.tracks.append(bass_track)
+
+        # Define the note threshold: notes below C4 (MIDI 60) go to bass,
+        # notes at or above C4 go to treble.
+        NOTE_THRESHOLD = 60
 
         # Convert the original track's delta times to absolute times.
         orig_track = mid.tracks[0]
-        messages = []
-        abs_time = 0
+        abs_msgs = []
+        current_time = 0
         for msg in orig_track:
-            abs_time += msg.time
-            messages.append((msg, abs_time))
+            current_time += msg.time
+            # Use a copy so that later modifications don't affect the original.
+            abs_msgs.append((msg.copy(), current_time))
 
-        # Split messages into treble and bass based on note number.
-        # (Here we assume bass clef gets notes with MIDI number < 60 and treble clef gets the rest.)
-        treble_msgs = []
-        bass_msgs = []
-        for msg, at in messages:
+        # Split messages based on their type and note value.
+        treble_abs = []
+        bass_abs = []
+
+        for msg, abs_time in abs_msgs:
             if msg.is_meta:
-                # Add meta messages to both tracks.
-                treble_msgs.append((msg.copy(), at))
-                bass_msgs.append((msg.copy(), at))
+                # Duplicate meta messages in both tracks.
+                treble_abs.append((msg.copy(), abs_time))
+                bass_abs.append((msg.copy(), abs_time))
             elif msg.type in ("note_on", "note_off") and hasattr(msg, "note"):
-                # Move notes below C4 to bass track, rest to treble
-                if msg.note < 60:
-                    bass_msgs.append((msg.copy(), at))
+                if msg.note < NOTE_THRESHOLD:
+                    bass_abs.append((msg.copy(), abs_time))
                 else:
-                    treble_msgs.append((msg.copy(), at))
+                    treble_abs.append((msg.copy(), abs_time))
             else:
-                # For other non-note messages, include them in both tracks.
-                treble_msgs.append((msg.copy(), at))
-                bass_msgs.append((msg.copy(), at))
+                # For any other messages, include them in both tracks.
+                treble_abs.append((msg.copy(), abs_time))
+                bass_abs.append((msg.copy(), abs_time))
 
-        # Helper function to convert a list of (msg, abs_time) back to delta times.
-        def abs_to_delta(msgs):
-            msgs_sorted = sorted(msgs, key=lambda x: x[1])
+        def abs_to_delta(abs_list):
+            # Sort by absolute time (just in case).
+            abs_list.sort(key=lambda x: x[1])
             new_msgs = []
-            prev = 0
-            for msg, at in msgs_sorted:
-                delta = at - prev
-                msg.time = delta
-                new_msgs.append(msg)
-                prev = at
+            prev_time = 0
+            for msg, abs_time in abs_list:
+                delta = abs_time - prev_time
+                # Create a new copy with updated delta time.
+                new_msgs.append(msg.copy(time=delta))
+                prev_time = abs_time
             return new_msgs
 
-        treble_new = abs_to_delta(treble_msgs)
-        bass_new = abs_to_delta(bass_msgs)
+        # Convert absolute times back to delta times.
+        treble_msgs = abs_to_delta(treble_abs)
+        bass_msgs = abs_to_delta(bass_abs)
 
         # Populate the new tracks.
-        treble_track.clear()
-        bass_track.clear()
-        for msg in treble_new:
+        for msg in treble_msgs:
             treble_track.append(msg)
-        for msg in bass_new:
+        for msg in bass_msgs:
             bass_track.append(msg)
 
-        # Save the new file.
+        # Ensure each track ends with an 'end_of_track' meta message.
+        if not treble_track or treble_track[-1].type != "end_of_track":
+            treble_track.append(MetaMessage("end_of_track", time=0))
+        if not bass_track or bass_track[-1].type != "end_of_track":
+            bass_track.append(MetaMessage("end_of_track", time=0))
+
+        # Add the two tracks to the new MidiFile.
+        new_mid.tracks = [treble_track, bass_track]
+
+        # Save the new MIDI file.
         output_path = self.output_dir / "2_transcription_split.midi"
         new_mid.save(str(output_path))
 
