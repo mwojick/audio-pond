@@ -43,11 +43,12 @@ def setup_gpu():
 class AudioProcessor:
     def __init__(self, output_dir: Path, midi2lily_path: str | None = None):
         self.output_dir = output_dir
-        self.midi2lily_path = midi2lily_path or os.getenv("MIDI2LILY_PATH")
-        if not self.midi2lily_path:
-            raise ValueError(
-                "MidiToLily path not provided. Set it via MIDI2LILY_PATH environment variable or --midi2lily-path option"
-            )
+        # look for arg first, then MIDI2LILY_PATH env var, then default to using wine with the provided exe
+        midi2lily_path = midi2lily_path or os.getenv("MIDI2LILY_PATH")
+        self.midi2lily_exe = (
+            [midi2lily_path] if midi2lily_path else ["wine64", "src/MidiToLily.exe"]
+        )
+        print(f"MIDI2LILY_EXE: {self.midi2lily_exe}")
         os.makedirs(output_dir, exist_ok=True)
 
     def process_youtube(self, url: str) -> Path:
@@ -265,7 +266,7 @@ class AudioProcessor:
             subprocess.run(
                 [
                     # Path to MidiToLily executable
-                    self.midi2lily_path,
+                    *self.midi2lily_exe,
                     str(midi_path),
                     "-quant",
                     quant,
@@ -279,7 +280,6 @@ class AudioProcessor:
                     str(ly_output_path),
                 ],
                 check=True,
-                capture_output=True,
                 text=True,
             )
             return ly_output_path
@@ -306,7 +306,6 @@ class AudioProcessor:
                     str(ly_path),
                 ],
                 check=True,
-                capture_output=True,
                 text=True,
             )
         except subprocess.CalledProcessError as e:
@@ -336,7 +335,7 @@ class AudioProcessor:
 @click.option(
     "--midi2lily-path",
     type=click.Path(),
-    help="Path to MidiToLily executable (defaults to MIDI2LILY_PATH env var)",
+    help="Path to MidiToLily executable (defaults to `MIDI2LILY_PATH` env var or `wine64 src/MidiToLily.exe` if neither are provided)",
 )
 @click.option(
     "--trim-start",

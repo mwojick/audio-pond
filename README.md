@@ -21,6 +21,8 @@ direnv allow
 uv pip install -r requirements.txt
 ```
 
+Optional, in case wine doesn't work:
+
 3. Download MidiToLily from https://github.com/victimofleisure/MidiToLily/releases
 
 4. Create `.env` file with `MIDI2LILY_PATH` set to the path of the MidiToLily executable
@@ -51,6 +53,7 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 - `--audio-file`: Process a local audio file instead of YouTube URL
 - `--midi-file`: Process a local MIDI file instead of transcribing from audio
 - `--output-dir`: Specify output directory (default: ./output)
+- `--midi2lily-path`: Path to MidiToLily executable (defaults to `MIDI2LILY_PATH` env var or `wine64 src/MidiToLily.exe` if neither are provided)
 - `--trim-start`: Trim silence from start of MIDI file before conversion
 - `--split-tracks`: Split MIDI file into treble and bass tracks
 - `--time`: Time signature for LilyPond output
