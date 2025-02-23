@@ -123,7 +123,7 @@ class AudioProcessor:
         for track in mid.tracks:
             abs_times = []
             running_time = 0
-            # First compute new absolute times (ensuring they don’t go below 0)
+            # First compute new absolute times (ensuring they don't go below 0)
             for msg in track:
                 running_time += msg.time
                 new_time = running_time - offset
@@ -144,81 +144,88 @@ class AudioProcessor:
     def split_midi_tracks(self, midi_path: Path) -> Path:
         """Split MIDI file into 2 tracks."""
 
-        # Load original single-track MIDI file.
+        # Load original MIDI file
         mid = MidiFile(str(midi_path))
 
-        # Create a new MidiFile and copy ticks_per_beat from the original.
-        new_mid = MidiFile()
+        # Create a new MidiFile and copy ticks_per_beat from the original
+        new_mid = MidiFile(type=1)  # Type 1 for multiple tracks
         new_mid.ticks_per_beat = mid.ticks_per_beat
 
-        # We'll create two new tracks.
+        # Create two new tracks
         treble_track = MidiTrack()
         bass_track = MidiTrack()
+        new_mid.tracks = [treble_track, bass_track]
 
         # Define the note threshold: notes below C4 (MIDI 60) go to bass,
-        # notes at or above C4 go to treble.
+        # notes at or above C4 go to treble
         NOTE_THRESHOLD = 60
 
-        # Convert the original track's delta times to absolute times.
-        orig_track = mid.tracks[0]
-        abs_msgs = []
-        current_time = 0
-        for msg in orig_track:
-            current_time += msg.time
-            # Use a copy so that later modifications don't affect the original.
-            abs_msgs.append((msg.copy(), current_time))
+        # First, collect all messages from all tracks
+        all_messages = []
+        for track in mid.tracks:
+            current_time = 0
+            for msg in track:
+                current_time += msg.time
+                all_messages.append((msg, current_time))
 
-        # Split messages based on their type and note value.
-        treble_abs = []
-        bass_abs = []
+        # Sort all messages by absolute time
+        all_messages.sort(key=lambda x: x[1])
 
-        for msg, abs_time in abs_msgs:
-            if msg.is_meta:
-                # Duplicate meta messages in both tracks.
-                treble_abs.append((msg.copy(), abs_time))
-                bass_abs.append((msg.copy(), abs_time))
+        # Split messages into treble and bass lists while preserving absolute times
+        treble_msgs = []
+        bass_msgs = []
+
+        # Add initial track metadata
+        for msg, time in all_messages:
+            if msg.type == "set_tempo":
+                treble_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg.copy(), time))
+            elif msg.type == "time_signature":
+                treble_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg.copy(), time))
+            elif msg.type == "key_signature":
+                treble_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg.copy(), time))
             elif msg.type in ("note_on", "note_off") and hasattr(msg, "note"):
+                msg_copy = msg.copy()
                 if msg.note < NOTE_THRESHOLD:
-                    bass_abs.append((msg.copy(), abs_time))
+                    bass_msgs.append((msg_copy, time))
                 else:
-                    treble_abs.append((msg.copy(), abs_time))
-            else:
-                # For any other messages, include them in both tracks.
-                treble_abs.append((msg.copy(), abs_time))
-                bass_abs.append((msg.copy(), abs_time))
+                    treble_msgs.append((msg_copy, time))
+            elif msg.type == "control_change":
+                # Copy control changes to both tracks to maintain expression
+                treble_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg.copy(), time))
+            elif msg.type == "program_change":
+                # Copy program changes to both tracks to maintain instrument
+                treble_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg.copy(), time))
 
-        def abs_to_delta(abs_list):
-            # Sort by absolute time (just in case).
-            abs_list.sort(key=lambda x: x[1])
-            new_msgs = []
+        # Convert absolute times back to delta times for each track
+        def convert_to_delta_time(messages):
+            messages.sort(key=lambda x: x[1])  # Sort by absolute time
+            delta_messages = []
             prev_time = 0
-            for msg, abs_time in abs_list:
+            for msg, abs_time in messages:
                 delta = abs_time - prev_time
-                # Create a new copy with updated delta time.
-                new_msgs.append(msg.copy(time=delta))
+                msg.time = int(delta)  # Ensure delta time is an integer
+                delta_messages.append(msg)
                 prev_time = abs_time
-            return new_msgs
+            return delta_messages
 
-        # Convert absolute times back to delta times.
-        treble_msgs = abs_to_delta(treble_abs)
-        bass_msgs = abs_to_delta(bass_abs)
-
-        # Populate the new tracks.
-        for msg in treble_msgs:
+        # Convert and add messages to tracks
+        for msg in convert_to_delta_time(treble_msgs):
             treble_track.append(msg)
-        for msg in bass_msgs:
+        for msg in convert_to_delta_time(bass_msgs):
             bass_track.append(msg)
 
-        # Ensure each track ends with an 'end_of_track' meta message.
+        # Ensure each track ends with an end_of_track message
         if not treble_track or treble_track[-1].type != "end_of_track":
             treble_track.append(MetaMessage("end_of_track", time=0))
         if not bass_track or bass_track[-1].type != "end_of_track":
             bass_track.append(MetaMessage("end_of_track", time=0))
 
-        # Add the two tracks to the new MidiFile.
-        new_mid.tracks = [treble_track, bass_track]
-
-        # Save the new MIDI file.
+        # Save the new MIDI file
         output_path = self.output_dir / "2_transcription_split.midi"
         new_mid.save(str(output_path))
 
@@ -242,7 +249,7 @@ class AudioProcessor:
                     "-key",
                     "1=g,29=c",
                     "-staves",
-                    "1",
+                    "1,1",
                     "-output",
                     str(ly_output_path),
                 ],
