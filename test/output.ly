@@ -33,10 +33,8 @@
 }
 \score {
   \new PianoStaff <<
-    <<
-      \new Staff = "up" { \voiceA }
-      \new Staff = "down" { \voiceB }
-    >>
+    \new Staff = "up" { \voiceA }
+    \new Staff = "down" { \voiceB }
   >>
   \layout {}
   \midi {}
