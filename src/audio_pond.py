@@ -48,7 +48,7 @@ class AudioProcessor:
         self.midi2lily_exe = (
             [midi2lily_path] if midi2lily_path else ["wine64", "src/MidiToLily.exe"]
         )
-        print(f"MIDI2LILY_EXE: {self.midi2lily_exe}")
+        print(f"MIDI2LILY_LOCATION: {self.midi2lily_exe}")
         os.makedirs(output_dir, exist_ok=True)
 
     def process_youtube(self, url: str) -> Path:
@@ -292,6 +292,11 @@ class AudioProcessor:
     help="Process local MIDI file directly, skipping transcription",
 )
 @click.option(
+    "--ly-file",
+    is_flag=True,
+    help="Use local LilyPond file directly, skipping transcription and LilyPond conversion",
+)
+@click.option(
     "--output-dir",
     type=click.Path(),
     default="./output",
@@ -334,6 +339,7 @@ def main(
     source: str,
     audio_file: bool,
     midi_file: bool,
+    ly_file: bool,
     output_dir: str,
     midi2lily_path: str | None,
     trim_start: bool,
@@ -346,7 +352,9 @@ def main(
     processor = AudioProcessor(Path(output_dir), midi2lily_path=midi2lily_path)
 
     try:
-        if midi_file:
+        if ly_file:
+            ly_path = Path(source)
+        elif midi_file:
             midi_path = Path(source)
         else:
             if audio_file:
@@ -363,7 +371,11 @@ def main(
         if split_tracks:
             midi_path = processor.split_midi_tracks(midi_path)
 
-        ly_path = processor.midi_to_lilypond(midi_path, time=time, key=key, quant=quant)
+        if not ly_file:
+            ly_path = processor.midi_to_lilypond(
+                midi_path, time=time, key=key, quant=quant
+            )
+
         processor.render_sheet_music(ly_path)
 
         click.echo(f"Sheet music has been generated in {output_dir}")
