@@ -19,13 +19,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# Configure TensorFlow GPU settings
-os.environ["CUDA_DEVICE_ORDER"] = (
-    "PCI_BUS_ID"  # Use PCI_BUS_ID for consistent GPU device ordering
-)
 
-
-def setup_gpu():
+def check_gpu():
     """Configure and verify GPU setup."""
     try:
         num_gpus = torch.cuda.device_count()
@@ -80,8 +75,8 @@ class AudioProcessor:
     def transcribe_audio(self, audio_path: Path) -> Path:
         """Transcribe audio to MIDI using Piano Transcription Inference"""
 
-        # Setup GPU for transcription
-        gpu_available = setup_gpu()
+        # Check GPU for transcription
+        gpu_available = check_gpu()
         device = "cuda" if gpu_available else "cpu"
 
         # Load audio
