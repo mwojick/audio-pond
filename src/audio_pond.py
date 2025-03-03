@@ -148,31 +148,22 @@ class AudioProcessor:
         # Load original MIDI file
         mid = MidiFile(str(midi_path))
 
-        # Create a new MidiFile and copy ticks_per_beat from the original
-        new_mid = MidiFile(type=1)  # Type 1 for multiple tracks
+        new_mid = MidiFile()
         new_mid.ticks_per_beat = mid.ticks_per_beat
 
-        # Create three tracks (conductor + treble + bass)
-        conductor_track = MidiTrack()
+        # Create two tracks (treble + bass)
         treble_track = MidiTrack()
         bass_track = MidiTrack()
-        new_mid.tracks = [conductor_track, treble_track, bass_track]
+        new_mid.tracks = [[], treble_track, bass_track]
 
-        # Add metadata to conductor track
-        conductor_track.append(MetaMessage("sequence_number", number=1, time=0))
-        conductor_track.append(MetaMessage("track_name", name="Conductor", time=0))
-
-        # Add sequence number and track name metadata at the start of each track
-        treble_track.append(MetaMessage("sequence_number", number=2, time=0))
-        treble_track.append(MetaMessage("track_name", name="Treble", time=0))
-        bass_track.append(MetaMessage("sequence_number", number=3, time=0))
-        bass_track.append(MetaMessage("track_name", name="Bass", time=0))
+        treble_track.append(MetaMessage("track_name", name="Upper", time=0))
+        bass_track.append(MetaMessage("track_name", name="Lower", time=0))
 
         # Define the note threshold: notes below C4 (MIDI 60) go to bass,
         # notes at or above C4 go to treble
         NOTE_THRESHOLD = 60
 
-        # First, collect all messages from all tracks
+        # Collect all messages from all tracks
         all_messages = []
         for track in mid.tracks:
             current_time = 0
@@ -180,73 +171,47 @@ class AudioProcessor:
                 current_time += msg.time
                 all_messages.append((msg, current_time))
 
-        # Sort all messages by absolute time
-        all_messages.sort(key=lambda x: x[1])
-
-        # Split messages into treble and bass lists while preserving absolute times
-        conductor_msgs = []
         treble_msgs = []
         bass_msgs = []
 
-        # Add initial track metadata
         for msg, time in all_messages:
             if msg.type == "set_tempo":
-                conductor_msgs.append((msg.copy(), time))
+                bass_msgs.append((msg, time))
+                treble_msgs.append((msg, time))
             elif msg.type == "time_signature":
-                conductor_msgs.append((msg.copy(), time))
-            elif msg.type == "key_signature":
-                conductor_msgs.append((msg.copy(), time))
-            elif msg.type in ("note_on", "note_off") and hasattr(msg, "note"):
-                msg_copy = msg.copy()
-                if msg.note < NOTE_THRESHOLD:
-                    msg_copy.channel = 1  # Set bass to channel 1
-                    bass_msgs.append((msg_copy, time))
+                bass_msgs.append((msg, time))
+                treble_msgs.append((msg, time))
+            elif msg.type == "note_on":
+                if msg.note >= NOTE_THRESHOLD:
+                    # upper voice
+                    msg.channel = 0
+                    treble_msgs.append((msg, time))
                 else:
-                    msg_copy.channel = 0  # Set treble to channel 0
-                    treble_msgs.append((msg_copy, time))
-            elif msg.type == "control_change":
-                # Copy control changes to both tracks with appropriate channels
-                treble_msg = msg.copy()
-                treble_msg.channel = 0
-                treble_msgs.append((treble_msg, time))
-                bass_msg = msg.copy()
-                bass_msg.channel = 1
-                bass_msgs.append((bass_msg, time))
-            elif msg.type == "program_change":
-                # Copy program changes to both tracks with appropriate channels
-                treble_msg = msg.copy()
-                treble_msg.channel = 0
-                treble_msgs.append((treble_msg, time))
-                bass_msg = msg.copy()
-                bass_msg.channel = 1
-                bass_msgs.append((bass_msg, time))
+                    # lower voice
+                    msg.channel = 1
+                    bass_msgs.append((msg, time))
 
         # Convert absolute times back to delta times for each track
         def convert_to_delta_time(messages):
-            messages.sort(key=lambda x: x[1])  # Sort by absolute time
             delta_messages = []
             prev_time = 0
             for msg, abs_time in messages:
                 delta = abs_time - prev_time
-                msg.time = int(delta)  # Ensure delta time is an integer
+                msg.time = int(delta)
                 delta_messages.append(msg)
                 prev_time = abs_time
             return delta_messages
 
         # Convert and add messages to tracks
-        for msg in convert_to_delta_time(conductor_msgs):
-            conductor_track.append(msg)
         for msg in convert_to_delta_time(treble_msgs):
             treble_track.append(msg)
         for msg in convert_to_delta_time(bass_msgs):
             bass_track.append(msg)
 
         # Ensure each track ends with an end_of_track message
-        if not conductor_track or conductor_track[-1].type != "end_of_track":
-            conductor_track.append(MetaMessage("end_of_track", time=0))
-        if not treble_track or treble_track[-1].type != "end_of_track":
+        if treble_track[-1].type != "end_of_track":
             treble_track.append(MetaMessage("end_of_track", time=0))
-        if not bass_track or bass_track[-1].type != "end_of_track":
+        if bass_track[-1].type != "end_of_track":
             bass_track.append(MetaMessage("end_of_track", time=0))
 
         # Save the new MIDI file
