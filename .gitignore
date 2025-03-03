@@ -15,3 +15,6 @@ __pycache__/
 
 # LilyPond
 output/
+
+test/*.midi
+test/*.pdf
