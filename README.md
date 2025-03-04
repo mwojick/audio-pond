@@ -36,19 +36,19 @@ Optional, in case wine doesn't work:
 ### Convert from YouTube:
 
 ```bash
-python src/audio_pond.py https://www.youtube.com/watch?v=your-video-id --trim-start --split-tracks --key 1=g,28=c
+python -m src.audio_pond https://www.youtube.com/watch?v=your-video-id --key 1=g,28=c
 ```
 
 ### Convert from local audio file:
 
 ```bash
-python src/audio_pond.py --audio-file path/to/your/audio/file.wav
+python -m src.audio_pond --audio-file path/to/your/audio/file.wav
 ```
 
 ### Convert from local MIDI file:
 
 ```bash
-python src/audio_pond.py --midi-file path/to/your/midi/file.mid
+python -m src.audio_pond --midi-file path/to/your/midi/file.mid
 ```
 
 ### Options:
@@ -58,8 +58,8 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 - `--midi-file`: Process local MIDI file directly, skipping transcription
 - `--ly-file`: Use local LilyPond file directly, skipping transcription and LilyPond conversion
 - `--output-dir`: Specify output directory (default: ./output)
-- `--trim-start`: Trim silence from start of MIDI file before conversion
-- `--split-tracks`: Split MIDI file into treble and bass tracks
+- `--no-trim`: Skip trimming silence from start of MIDI file before conversion
+- `--no-split`: Skip splitting MIDI file into treble and bass tracks
 - `--time`: Time signature for LilyPond output
 - `--key`: Key signature for LilyPond output
 - `--quant`: Quantization value for LilyPond output
