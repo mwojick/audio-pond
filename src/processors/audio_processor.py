@@ -18,10 +18,8 @@ class AudioProcessor:
         Args:
             output_dir: Directory for output files
         """
-        self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
-        # Initialize specialized processors
         self.source_processor = SourceProcessor(output_dir)
         self.midi_transcriber = MidiTranscriber(output_dir)
         self.midi_processor = MidiProcessor(output_dir)

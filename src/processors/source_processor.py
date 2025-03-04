@@ -1,6 +1,5 @@
 """Source processor for Audio Pond."""
 
-import os
 from pathlib import Path
 import yt_dlp
 from pydub import AudioSegment
@@ -16,7 +15,6 @@ class SourceProcessor:
             output_dir: Directory for output files
         """
         self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
 
     def process_youtube(self, url: str) -> Path:
         """Download YouTube video and extract audio.

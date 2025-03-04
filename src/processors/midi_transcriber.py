@@ -1,6 +1,5 @@
 """MIDI transcriber for Audio Pond."""
 
-import os
 from pathlib import Path
 import librosa
 from piano_transcription_inference import PianoTranscription, sample_rate
@@ -17,7 +16,6 @@ class MidiTranscriber:
             output_dir: Directory for output files
         """
         self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
 
         # Check GPU for transcription
         gpu_available = check_gpu()

@@ -16,7 +16,6 @@ class LilypondConverter:
             output_dir: Directory for output files
         """
         self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
 
         # Configure MidiToLily executable path
         midi2lily_path = os.getenv("MIDI2LILY_PATH")

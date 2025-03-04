@@ -1,6 +1,5 @@
 """MIDI processor for Audio Pond."""
 
-import os
 from pathlib import Path
 from mido import MidiFile, MidiTrack, MetaMessage
 
@@ -15,7 +14,6 @@ class MidiProcessor:
             output_dir: Directory for output files
         """
         self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
 
     def trim_midi_silence(self, midi_path: Path) -> Path:
         """Remove initial silence from MIDI file.
