@@ -45,5 +45,8 @@ class AudioProcessor:
     ) -> Path:
         return self.lilypond_converter.midi_to_lilypond(midi_path, time, key, quant)
 
+    def transform_to_parallel_music(self, ly_path: Path) -> Path:
+        return self.lilypond_converter.transform_to_parallel_music(ly_path)
+
     def render_sheet_music(self, ly_path: Path) -> Path:
         return self.lilypond_converter.render_sheet_music(ly_path)

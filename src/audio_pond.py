@@ -104,6 +104,7 @@ def main(
                 midi_path, time=time, key=key, quant=quant
             )
 
+        ly_path = processor.transform_to_parallel_music(ly_path)
         processor.render_sheet_music(ly_path)
 
         click.echo(f"Sheet music has been generated in {output_dir}")

@@ -1,6 +1,6 @@
 # Audio Pond
 
-Convert piano performances from YouTube or audio files into lilypond files and sheet music.
+Convert piano music from YouTube or audio files into editable LilyPond files and sheet music.
 
 ## Development
 
@@ -73,6 +73,7 @@ For each conversion, the following files will be generated in the output directo
 - `2_transcription_trimmed.midi`: Transcribed MIDI with initial silence removed
 - `2_transcription_split.midi`: Transcribed MIDI split into treble and bass tracks
 - `3_lilypond.ly`: LilyPond notation
+- `3_lilypond_parallel.ly`: LilyPond notation with parallelMusic (for easier editing)
 - `4_sheet_music.pdf`: Sheet music
 - `4_sheet_music.midi`: Sheet music in MIDI format
 
