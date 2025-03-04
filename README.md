@@ -13,11 +13,15 @@ cd audio-pond
 
 2. Set up the development environment:
 
-```bash
-# Make sure direnv and nix-direnv are installed before running this
-direnv allow
+#### Make sure nix (with flakes enabled), direnv, and nix-direnv are installed before running this
 
-# Install dependencies with [uv](https://github.com/astral-sh/uv)
+```bash
+direnv allow
+```
+
+#### Install dependencies with [uv](https://github.com/astral-sh/uv)
+
+```bash
 uv pip install -r requirements.txt
 ```
 
@@ -50,10 +54,10 @@ python src/audio_pond.py --midi-file path/to/your/midi/file.mid
 ### Options:
 
 - `--help`: Show help
-- `--audio-file`: Process a local audio file instead of YouTube URL
-- `--midi-file`: Process a local MIDI file instead of transcribing from audio
+- `--audio-file`: Process local audio file instead of YouTube URL
+- `--midi-file`: Process local MIDI file directly, skipping transcription
+- `--ly-file`: Use local LilyPond file directly, skipping transcription and LilyPond conversion
 - `--output-dir`: Specify output directory (default: ./output)
-- `--midi2lily-path`: Path to MidiToLily executable (defaults to `MIDI2LILY_PATH` env var or `wine64 src/MidiToLily.exe` if neither are provided)
 - `--trim-start`: Trim silence from start of MIDI file before conversion
 - `--split-tracks`: Split MIDI file into treble and bass tracks
 - `--time`: Time signature for LilyPond output

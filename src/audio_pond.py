@@ -36,10 +36,9 @@ def check_gpu():
 
 
 class AudioProcessor:
-    def __init__(self, output_dir: Path, midi2lily_path: str | None = None):
+    def __init__(self, output_dir: Path):
         self.output_dir = output_dir
-        # look for arg first, then MIDI2LILY_PATH env var, then default to using wine with the provided exe
-        midi2lily_path = midi2lily_path or os.getenv("MIDI2LILY_PATH")
+        midi2lily_path = os.getenv("MIDI2LILY_PATH")
         self.midi2lily_exe = (
             [midi2lily_path] if midi2lily_path else ["wine64", "src/MidiToLily.exe"]
         )
@@ -298,11 +297,6 @@ class AudioProcessor:
     help="Directory for output files",
 )
 @click.option(
-    "--midi2lily-path",
-    type=click.Path(),
-    help="Path to MidiToLily executable (defaults to `MIDI2LILY_PATH` env var or `wine64 src/MidiToLily.exe` if neither are provided)",
-)
-@click.option(
     "--trim-start",
     is_flag=True,
     help="Trim silence from start of MIDI file before conversion",
@@ -336,7 +330,6 @@ def main(
     midi_file: bool,
     ly_file: bool,
     output_dir: str,
-    midi2lily_path: str | None,
     trim_start: bool,
     split_tracks: bool,
     time: str,
@@ -344,7 +337,7 @@ def main(
     quant: str,
 ):
     """Convert piano performances into sheet music."""
-    processor = AudioProcessor(Path(output_dir), midi2lily_path=midi2lily_path)
+    processor = AudioProcessor(Path(output_dir))
 
     try:
         if ly_file:
