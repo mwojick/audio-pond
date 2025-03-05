@@ -5,7 +5,7 @@ This guide explains how to build and run Audio Pond in a Docker container using 
 ## Prerequisites
 
 - [Nix package manager](https://nixos.org/download.html) with flakes enabled
-- Docker (optional, if you want to run the container with Docker instead of Nix)
+- Docker (to run the container after it's built with Nix)
 
 > **Note:** Due to the dependency on Wine for MidiToLily, this Docker image only supports x86_64 Linux platforms. It will not work on ARM-based systems like Apple Silicon Macs without additional configuration.
 
@@ -23,41 +23,6 @@ nix build .#docker
 
 ```bash
 docker load < result
-```
-
-### Alternative: Direct Build with Docker
-
-If you prefer to build with Docker directly (without using Nix to generate the image):
-
-1. Create a Dockerfile in the project root:
-
-```bash
-cat > Dockerfile << 'EOF'
-FROM nixos/nix:latest
-
-# Copy the project files
-WORKDIR /app
-COPY . .
-
-# Build the application using Nix
-RUN nix-env -iA nixpkgs.git && \
-    mkdir -p /etc/nix && \
-    echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf && \
-    nix build .#default
-
-# Set up the runtime environment
-WORKDIR /data
-VOLUME /data
-
-# Set the entrypoint
-ENTRYPOINT ["/app/result/bin/audio-pond"]
-EOF
-```
-
-2. Build the Docker image:
-
-```bash
-docker build -t audio-pond .
 ```
 
 ## Running the Container
@@ -87,22 +52,4 @@ The Docker container supports all the same options as the regular command-line i
 
 ```bash
 docker run audio-pond:latest --help
-```
-
-## Troubleshooting
-
-### Wine Issues
-
-If you encounter issues with Wine in the container, you might need to set the `MIDI2LILY_PATH` environment variable:
-
-```bash
-docker run -v $(pwd)/output:/data -e MIDI2LILY_PATH=/path/to/MidiToLily.exe audio-pond:latest "https://www.youtube.com/watch?v=your-video-id"
-```
-
-### Permission Issues
-
-If you encounter permission issues with the output files, you can run the container with your user ID:
-
-```bash
-docker run -v $(pwd)/output:/data -u $(id -u):$(id -g) audio-pond:latest "https://www.youtube.com/watch?v=your-video-id"
 ```
