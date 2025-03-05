@@ -7,24 +7,27 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-
-        # Python environment with all dependencies
-        pythonEnv = pkgs.python311.withPackages (ps:
-          with ps; [
-            click
-            pydub
-            librosa
-            torch
-            python-dotenv
-            mido
-            # Add any other Python dependencies your project needs
-          ]);
-
-        # Application package
-        audioPond = pkgs.stdenv.mkDerivation {
+    let
+      # Only support x86_64-linux because of wine dependency
+      supportedSystems = [ "x86_64-linux" ];
+      forEachSupportedSystem = f:
+        nixpkgs.lib.genAttrs supportedSystems
+        (system: f { pkgs = import nixpkgs { inherit system; }; });
+    in {
+      packages = forEachSupportedSystem ({ pkgs }: {
+        default = let
+          # Python environment with all dependencies
+          pythonEnv = pkgs.python311.withPackages (ps:
+            with ps; [
+              click
+              pydub
+              librosa
+              torch
+              python-dotenv
+              mido
+              # Add any other Python dependencies your project needs
+            ]);
+        in pkgs.stdenv.mkDerivation {
           name = "audio-pond";
           src = ./.;
           buildInputs = [ pythonEnv pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
@@ -48,8 +51,11 @@
           '';
         };
 
-        # Docker image
-        dockerImage = pkgs.dockerTools.buildLayeredImage {
+        docker = let
+          audioPond = self.packages.x86_64-linux.default;
+          pythonEnv = pkgs.python311.withPackages
+            (ps: with ps; [ click pydub librosa torch python-dotenv mido ]);
+        in pkgs.dockerTools.buildLayeredImage {
           name = "audio-pond";
           tag = "latest";
 
@@ -70,13 +76,10 @@
             Volumes = { "/data" = { }; };
           };
         };
-      in {
-        packages = {
-          default = audioPond;
-          docker = dockerImage;
-        };
+      });
 
-        devShells.default = pkgs.mkShell {
+      devShells = forEachSupportedSystem ({ pkgs }: {
+        default = pkgs.mkShell {
           venvDir = ".venv";
           packages = with pkgs;
             [ ffmpeg wine64 lilypond python311 stdenv.cc.cc.lib makeWrapper ]
@@ -99,4 +102,5 @@
           '';
         };
       });
+    };
 }

@@ -91,6 +91,8 @@ To inspect MIDI quality: https://signal.vercel.app/edit
 
 Audio Pond can be run in a Docker container, which includes all the necessary dependencies (ffmpeg, wine, lilypond, etc.).
 
+> **Note:** Due to the dependency on Wine for MidiToLily, the Docker container only supports x86_64 Linux platforms.
+
 ### Quick Start
 
 ```bash
