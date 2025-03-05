@@ -18,25 +18,21 @@ docker build -t audio-pond:latest .
 ### Basic Usage
 
 ```bash
-docker run -v $(pwd)/output:/data audio-pond:latest "https://www.youtube.com/watch?v=your-video-id"
+docker run -v $(pwd)/output:/app/output audio-pond:latest "https://www.youtube.com/watch?v=your-video-id"
 ```
 
 This will:
 
-- Mount the current directory's `output` folder to `/data` in the container
+- Mount the current directory's `output` folder to `/app/output` in the container
 - Process the YouTube video and generate sheet music in the mounted directory
 
 ### Processing Local Files
 
-To process local audio or MIDI files, you need to mount them into the container:
-
 ```bash
-docker run -v $(pwd)/output:/data -v $(pwd)/input:/input audio-pond:latest --audio-file /input/your-audio-file.wav
+docker run -v $(pwd)/output:/app/output audio-pond:latest --audio-file /app/output/your-audio-file.wav
 ```
 
 ### Other Options
-
-The Docker container supports all the same options as the regular command-line interface:
 
 ```bash
 docker run audio-pond:latest --help
