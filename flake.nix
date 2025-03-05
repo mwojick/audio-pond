@@ -12,16 +12,18 @@
       forEachSupportedSystem = f:
         nixpkgs.lib.genAttrs supportedSystems
         (system: f { pkgs = import nixpkgs { inherit system; }; });
+
+      getPython = pkgs: pkgs.python311;
+      getRuntimeDeps = pkgs: with pkgs; [ ffmpeg wine64 lilypond ];
     in {
       packages = forEachSupportedSystem ({ pkgs }:
         let
-          # Base Python without packages
-          python = pkgs.python311;
+          python = getPython pkgs;
+          runtimeDeps = getRuntimeDeps pkgs;
 
           audioPond = pkgs.stdenv.mkDerivation {
             name = "audio-pond";
             src = ./.;
-            # Include uv for dependency management
             nativeBuildInputs = [ pkgs.python311Packages.uv ];
             buildInputs = [ python ];
             installPhase = ''
@@ -55,15 +57,8 @@
             name = "audio-pond";
             tag = "latest";
 
-            contents = [
-              audioPond
-              pkgs.ffmpeg
-              pkgs.wine64
-              pkgs.lilypond
-              pkgs.bash
-              pkgs.coreutils
-              pkgs.cacert # For HTTPS requests
-            ];
+            contents = [ audioPond ] ++ runtimeDeps
+              ++ [ pkgs.bash pkgs.coreutils pkgs.cacert ];
 
             config = {
               Cmd = [ "/bin/audio-pond" ];
@@ -76,29 +71,33 @@
           docker = dockerImage;
         });
 
-      devShells = forEachSupportedSystem ({ pkgs }: {
-        default = pkgs.mkShell {
-          venvDir = ".venv";
-          packages = with pkgs;
-            [ ffmpeg wine64 lilypond python311 stdenv.cc.cc.lib makeWrapper ]
-            ++ (with pkgs.python311Packages; [ uv ruff ]);
+      devShells = forEachSupportedSystem ({ pkgs }:
+        let
+          python = getPython pkgs;
+          runtimeDeps = getRuntimeDeps pkgs;
+        in {
+          default = pkgs.mkShell {
+            venvDir = ".venv";
+            packages = runtimeDeps
+              ++ [ python pkgs.stdenv.cc.cc.lib pkgs.makeWrapper ]
+              ++ (with pkgs.python311Packages; [ uv ruff ]);
 
-          shellHook = ''
-            if [ ! -d "$venvDir" ]; then
-              echo "Creating new venv using uv..."
-              uv venv "$venvDir"
-            fi
+            shellHook = ''
+              if [ ! -d "$venvDir" ]; then
+                echo "Creating new venv using uv..."
+                uv venv "$venvDir"
+              fi
 
-            if [ -d "$venvDir" ] && [ ! -f "$venvDir/bin/.python-wrapped" ]; then
-              echo "Wrapping Python with required libraries..."
-              wrapProgram "$PWD/$venvDir/bin/python" \
-                --prefix LD_LIBRARY_PATH : "${pkgs.stdenv.cc.cc.lib}/lib"
-            fi
+              if [ -d "$venvDir" ] && [ ! -f "$venvDir/bin/.python-wrapped" ]; then
+                echo "Wrapping Python with required libraries..."
+                wrapProgram "$PWD/$venvDir/bin/python" \
+                  --prefix LD_LIBRARY_PATH : "${pkgs.stdenv.cc.cc.lib}/lib"
+              fi
 
-            echo "Activating venv..."
-            source "$venvDir/bin/activate"
-          '';
-        };
-      });
+              echo "Activating venv..."
+              source "$venvDir/bin/activate"
+            '';
+          };
+        });
     };
 }
