@@ -14,17 +14,19 @@
         (system: f { pkgs = import nixpkgs { inherit system; }; });
 
       getPython = pkgs: pkgs.python311;
+      getPythonPackages = pkgs: pkgs.python311Packages;
       getRuntimeDeps = pkgs: with pkgs; [ ffmpeg wine64 lilypond ];
     in {
       packages = forEachSupportedSystem ({ pkgs }:
         let
           python = getPython pkgs;
+          pythonPackages = getPythonPackages pkgs;
           runtimeDeps = getRuntimeDeps pkgs;
 
           audioPond = pkgs.stdenv.mkDerivation {
             name = "audio-pond";
             src = ./.;
-            nativeBuildInputs = [ pkgs.python311Packages.uv ];
+            nativeBuildInputs = [ pythonPackages.uv ];
             buildInputs = [ python ];
             installPhase = ''
               mkdir -p $out/bin
@@ -37,10 +39,10 @@
 
               # Create a virtual environment with uv
               cd $out/lib/audio-pond
-              ${pkgs.python311Packages.uv}/bin/uv venv .venv
+              ${pythonPackages.uv}/bin/uv venv .venv
 
               # Install dependencies using uv
-              ${pkgs.python311Packages.uv}/bin/uv pip install -r requirements.txt --no-cache
+              ${pythonPackages.uv}/bin/uv pip install -r requirements.txt --no-cache
 
               # Create a wrapper script
               cat > $out/bin/audio-pond <<EOF
@@ -74,13 +76,14 @@
       devShells = forEachSupportedSystem ({ pkgs }:
         let
           python = getPython pkgs;
+          pythonPackages = getPythonPackages pkgs;
           runtimeDeps = getRuntimeDeps pkgs;
         in {
           default = pkgs.mkShell {
             venvDir = ".venv";
             packages = runtimeDeps
               ++ [ python pkgs.stdenv.cc.cc.lib pkgs.makeWrapper ]
-              ++ (with pkgs.python311Packages; [ uv ruff ]);
+              ++ (with pythonPackages; [ uv ruff ]);
 
             shellHook = ''
               if [ ! -d "$venvDir" ]; then
