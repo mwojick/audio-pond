@@ -15,14 +15,15 @@
     in {
       packages = forEachSupportedSystem ({ pkgs }:
         let
-          # Python environment with all dependencies
-          pythonEnv = pkgs.python311.withPackages
-            (ps: with ps; [ click pydub librosa torch python-dotenv mido ]);
+          # Base Python without packages
+          python = pkgs.python311;
 
           audioPond = pkgs.stdenv.mkDerivation {
             name = "audio-pond";
             src = ./.;
-            buildInputs = [ pythonEnv ];
+            # Include uv for dependency management
+            nativeBuildInputs = [ pkgs.python311Packages.uv ];
+            buildInputs = [ python ];
             installPhase = ''
               mkdir -p $out/bin
               mkdir -p $out/lib/audio-pond
@@ -32,11 +33,18 @@
               cp -r requirements.txt $out/lib/audio-pond/
               cp -r pyproject.toml $out/lib/audio-pond/
 
+              # Create a virtual environment with uv
+              cd $out/lib/audio-pond
+              ${pkgs.python311Packages.uv}/bin/uv venv .venv
+
+              # Install dependencies using uv
+              ${pkgs.python311Packages.uv}/bin/uv pip install -r requirements.txt --no-cache
+
               # Create a wrapper script
               cat > $out/bin/audio-pond <<EOF
               #!/bin/sh
               export PYTHONPATH=$out/lib/audio-pond:\$PYTHONPATH
-              exec ${pythonEnv}/bin/python -m src.audio_pond "\$@"
+              $out/lib/audio-pond/.venv/bin/python -m src.audio_pond "\$@"
               EOF
 
               chmod +x $out/bin/audio-pond
@@ -47,7 +55,15 @@
             name = "audio-pond";
             tag = "latest";
 
-            contents = [ audioPond pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
+            contents = [
+              audioPond
+              pkgs.ffmpeg
+              pkgs.wine64
+              pkgs.lilypond
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.cacert # For HTTPS requests
+            ];
 
             config = {
               Cmd = [ "/bin/audio-pond" ];
