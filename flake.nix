@@ -13,8 +13,8 @@
         nixpkgs.lib.genAttrs supportedSystems
         (system: f { pkgs = import nixpkgs { inherit system; }; });
     in {
-      packages = forEachSupportedSystem ({ pkgs }: {
-        default = let
+      packages = forEachSupportedSystem ({ pkgs }:
+        let
           # Python environment with all dependencies
           pythonEnv = pkgs.python311.withPackages (ps:
             with ps; [
@@ -26,56 +26,58 @@
               mido
               # Add any other Python dependencies your project needs
             ]);
-        in pkgs.stdenv.mkDerivation {
-          name = "audio-pond";
-          src = ./.;
-          buildInputs = [ pythonEnv pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
-          installPhase = ''
-            mkdir -p $out/bin
-            mkdir -p $out/lib/audio-pond
 
-            # Copy the source code
-            cp -r src $out/lib/audio-pond/
-            cp -r requirements.txt $out/lib/audio-pond/
-            cp -r pyproject.toml $out/lib/audio-pond/
+          # Application package
+          audioPond = pkgs.stdenv.mkDerivation {
+            name = "audio-pond";
+            src = ./.;
+            buildInputs = [ pythonEnv pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
+            installPhase = ''
+              mkdir -p $out/bin
+              mkdir -p $out/lib/audio-pond
 
-            # Create a wrapper script
-            cat > $out/bin/audio-pond <<EOF
-            #!/bin/sh
-            export PYTHONPATH=$out/lib/audio-pond:\$PYTHONPATH
-            exec ${pythonEnv}/bin/python -m src.audio_pond "\$@"
-            EOF
+              # Copy the source code
+              cp -r src $out/lib/audio-pond/
+              cp -r requirements.txt $out/lib/audio-pond/
+              cp -r pyproject.toml $out/lib/audio-pond/
 
-            chmod +x $out/bin/audio-pond
-          '';
-        };
+              # Create a wrapper script
+              cat > $out/bin/audio-pond <<EOF
+              #!/bin/sh
+              export PYTHONPATH=$out/lib/audio-pond:\$PYTHONPATH
+              exec ${pythonEnv}/bin/python -m src.audio_pond "\$@"
+              EOF
 
-        docker = let
-          audioPond = self.packages.x86_64-linux.default;
-          pythonEnv = pkgs.python311.withPackages
-            (ps: with ps; [ click pydub librosa torch python-dotenv mido ]);
-        in pkgs.dockerTools.buildLayeredImage {
-          name = "audio-pond";
-          tag = "latest";
-
-          contents = [
-            audioPond
-            pythonEnv
-            pkgs.ffmpeg
-            pkgs.wine64
-            pkgs.lilypond
-            pkgs.bash
-            pkgs.coreutils
-            pkgs.cacert # For HTTPS requests
-          ];
-
-          config = {
-            Cmd = [ "/bin/audio-pond" ];
-            WorkingDir = "/data";
-            Volumes = { "/data" = { }; };
+              chmod +x $out/bin/audio-pond
+            '';
           };
-        };
-      });
+
+          # Docker image
+          dockerImage = pkgs.dockerTools.buildLayeredImage {
+            name = "audio-pond";
+            tag = "latest";
+
+            contents = [
+              audioPond
+              pythonEnv
+              pkgs.ffmpeg
+              pkgs.wine64
+              pkgs.lilypond
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.cacert # For HTTPS requests
+            ];
+
+            config = {
+              Cmd = [ "/bin/audio-pond" ];
+              WorkingDir = "/data";
+              Volumes = { "/data" = { }; };
+            };
+          };
+        in {
+          default = audioPond;
+          docker = dockerImage;
+        });
 
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
