@@ -3,10 +3,9 @@
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs }:
     let
       # Only support x86_64-linux because of wine dependency
       supportedSystems = [ "x86_64-linux" ];
