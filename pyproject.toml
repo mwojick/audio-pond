@@ -1,10 +1,10 @@
 [project]
 name = "audio-pond"
 version = "1.0.0"
-description = "Convert piano performances into professional sheet music"
+description = "Convert piano music into lilypond and sheet music"
 authors = []
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 dependencies = [
     "ipykernel",

@@ -13,8 +13,8 @@
         nixpkgs.lib.genAttrs supportedSystems
         (system: f { pkgs = import nixpkgs { inherit system; }; });
 
-      getPython = pkgs: pkgs.python311;
-      getPythonPackages = pkgs: pkgs.python311Packages;
+      getPython = pkgs: pkgs.python312;
+      getPythonPackages = pkgs: pkgs.python312Packages;
       getRuntimeDeps = pkgs: with pkgs; [ ffmpeg wine64 lilypond ];
     in {
       packages = forEachSupportedSystem ({ pkgs }:
@@ -26,30 +26,50 @@
           audioPond = pkgs.stdenv.mkDerivation {
             name = "audio-pond";
             src = ./.;
-            nativeBuildInputs = [ pythonPackages.uv ];
+            nativeBuildInputs = [ pkgs.makeWrapper ];
             buildInputs = [ python ];
+
             installPhase = ''
               mkdir -p $out/bin
               mkdir -p $out/lib/audio-pond
 
               # Copy the source code
               cp -r src $out/lib/audio-pond/
-              cp -r requirements.txt $out/lib/audio-pond/
-              cp -r pyproject.toml $out/lib/audio-pond/
-
-              # Create a virtual environment with uv
-              cd $out/lib/audio-pond
-              ${pythonPackages.uv}/bin/uv venv .venv
-
-              # Install dependencies using uv
-              ${pythonPackages.uv}/bin/uv pip install -r requirements.txt --no-cache
 
               # Create a wrapper script
-              cat > $out/bin/audio-pond <<EOF
-              #!/bin/sh
-              export PYTHONPATH=$out/lib/audio-pond:\$PYTHONPATH
-              $out/lib/audio-pond/.venv/bin/python -m src.audio_pond "\$@"
-              EOF
+              makeWrapper ${python}/bin/python $out/bin/audio-pond \
+                --set PYTHONPATH $out/lib/audio-pond:${
+                  pkgs.lib.makeSearchPath
+                  "lib/python${python.pythonVersion}/site-packages" (
+                    # Add Python dependencies from requirements.txt
+                    with pythonPackages; [
+                      # Core dependencies
+                      numpy
+                      click
+                      python-dotenv
+                      pydub
+
+                      # Librosa and its dependencies
+                      librosa
+                      lazy-loader
+                      audioread
+                      soundfile
+                      pooch
+                      scikit-learn
+                      joblib
+                      decorator
+                      numba
+                      scipy
+
+                      # Other dependencies
+                      torch
+                      mido
+                      yt-dlp
+                      requests
+                      piano-transcription-inference
+                    ])
+                } \
+                --add-flags "-m src.audio_pond"
 
               chmod +x $out/bin/audio-pond
             '';
@@ -60,12 +80,17 @@
             tag = "latest";
 
             contents = [ audioPond ] ++ runtimeDeps
-              ++ [ pkgs.bash pkgs.coreutils pkgs.cacert ];
+              ++ [ pkgs.bash pkgs.coreutils pkgs.cacert pkgs.stdenv.cc.cc.lib ];
 
             config = {
-              Cmd = [ "/bin/audio-pond" ];
+              Cmd = [ "${audioPond}/bin/audio-pond" ];
               WorkingDir = "/data";
               Volumes = { "/data" = { }; };
+              Env = [
+                "LD_LIBRARY_PATH=${
+                  pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]
+                }"
+              ];
             };
           };
         in {
