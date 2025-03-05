@@ -7,7 +7,7 @@ This guide explains how to build and run Audio Pond in a Docker container using 
 - [Nix package manager](https://nixos.org/download.html) with flakes enabled
 - Docker (to run the container after it's built with Nix)
 
-> **Note:** Due to the dependency on Wine for MidiToLily, this Docker image only supports x86_64 Linux platforms. It will not work on ARM-based systems like Apple Silicon Macs without additional configuration.
+> **Note:** Due to the dependency on Wine for MidiToLily, the Docker image can only be built on x86_64 Linux platforms.
 
 ## Building the Docker Image
 
