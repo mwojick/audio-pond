@@ -16,22 +16,13 @@
       packages = forEachSupportedSystem ({ pkgs }:
         let
           # Python environment with all dependencies
-          pythonEnv = pkgs.python311.withPackages (ps:
-            with ps; [
-              click
-              pydub
-              librosa
-              torch
-              python-dotenv
-              mido
-              # Add any other Python dependencies your project needs
-            ]);
+          pythonEnv = pkgs.python311.withPackages
+            (ps: with ps; [ click pydub librosa torch python-dotenv mido ]);
 
-          # Application package
           audioPond = pkgs.stdenv.mkDerivation {
             name = "audio-pond";
             src = ./.;
-            buildInputs = [ pythonEnv pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
+            buildInputs = [ pythonEnv ];
             installPhase = ''
               mkdir -p $out/bin
               mkdir -p $out/lib/audio-pond
@@ -52,21 +43,11 @@
             '';
           };
 
-          # Docker image
           dockerImage = pkgs.dockerTools.buildLayeredImage {
             name = "audio-pond";
             tag = "latest";
 
-            contents = [
-              audioPond
-              pythonEnv
-              pkgs.ffmpeg
-              pkgs.wine64
-              pkgs.lilypond
-              pkgs.bash
-              pkgs.coreutils
-              pkgs.cacert # For HTTPS requests
-            ];
+            contents = [ audioPond pkgs.ffmpeg pkgs.wine64 pkgs.lilypond ];
 
             config = {
               Cmd = [ "/bin/audio-pond" ];
