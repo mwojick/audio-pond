@@ -87,8 +87,6 @@ To inspect MIDI quality: https://signal.vercel.app/edit
 - [MidiToLily](https://github.com/victimofleisure/MidiToLily) (midi to lilypond conversion)
 - [lilypond](https://lilypond.org/) (lilypond to sheet music)
 
-## Docker Container
+## Docker
 
-Audio Pond can be run in a Docker container, which includes all the necessary dependencies (ffmpeg, wine, lilypond, etc.).
-
-For instructions on building and using the Docker container, see [DOCKER.md](DOCKER.md).
+Audio Pond can be run in a Docker container, which includes all the necessary dependencies (ffmpeg, wine, lilypond, etc.). See [DOCKER.md](DOCKER.md) for instructions.
