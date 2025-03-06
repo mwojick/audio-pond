@@ -19,5 +19,3 @@ output/
 test/*.midi
 test/*.pdf
 test/*.ly~
-
-result

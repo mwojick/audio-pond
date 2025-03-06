@@ -17,7 +17,7 @@ docker build -t audio-pond:latest .
 
 ```bash
 # Use the default with a YouTube URL
-docker run --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
+docker run -it --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
 ```
 
 - `/usr/lib/wsl/lib` directory is needed when running on Windows with WSL so pytorch can find the GPU
@@ -28,14 +28,14 @@ Run with different arguments as needed:
 
 ```bash
 # Process local audio file
-docker run --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest --audio-file output/1_raw_audio.wav
+docker run -it --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest --audio-file output/1_raw_audio.wav
 
 # Process local MIDI file
-docker run --rm -v $(pwd)/output:/app/output audio-pond:latest --midi-file output/2_transcription_split.midi --no-trim --no-split --key 1=g,28=c
+docker run -it --rm -v $(pwd)/output:/app/output audio-pond:latest --midi-file output/2_transcription_split.midi --no-trim --no-split --key 1=g,28=c
 
 # Process local LilyPond file
-docker run --rm -v $(pwd)/output:/app/output audio-pond:latest --ly-file output/3_lilypond.ly
+docker run -it --rm -v $(pwd)/output:/app/output audio-pond:latest --ly-file output/3_lilypond.ly
 
 # Show help
-docker run --rm audio-pond:latest --help
+docker run -it --rm audio-pond:latest --help
 ```

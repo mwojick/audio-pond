@@ -15,19 +15,19 @@ RUN echo "experimental-features = nix-command flakes" >/etc/nix/nix.conf
 
 # Install direnv and nix-direnv
 ENV PATH="/root/.nix-profile/bin:${PATH}"
-RUN nix-env -iA nixpkgs.direnv nixpkgs.nix-direnv
+RUN nix profile install nixpkgs#direnv nixpkgs#nix-direnv
+RUN mkdir -p /root/.config/direnv
+RUN echo 'source $HOME/.nix-profile/share/nix-direnv/direnvrc' >/root/.config/direnv/direnvrc
 
 WORKDIR /app
 
 COPY flake.lock flake.nix .envrc ./
-
-RUN echo 'eval "$(direnv hook bash)"' >>~/.bashrc
-RUN bash -c 'eval "$(direnv hook bash)" && direnv allow && direnv export bash > /tmp/env_vars'
+RUN direnv allow
 
 COPY requirements.txt ./
 ENV UV_LINK_MODE=copy
 RUN --mount=type=cache,target=/root/.cache/uv \
-    bash -c 'source /tmp/env_vars && uv pip install -r requirements.txt'
+    bash -c 'direnv exec . uv pip install -r requirements.txt'
 
 COPY src/ src/
-ENTRYPOINT ["bash", "-c", "source /tmp/env_vars && .venv/bin/python -m src.audio_pond \"$@\"", "bash"]
+ENTRYPOINT ["bash", "-c", "direnv exec . .venv/bin/python -m src.audio_pond \"$@\"", "bash"]
