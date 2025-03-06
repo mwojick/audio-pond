@@ -16,7 +16,9 @@ docker build -t audio-pond:latest .
 ## Running Commands
 
 ```bash
-docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
+# lib/wsl directory is needed when running on Windows with WSL so pytorch can find the GPU
+# ~/piano_transcription_inference_data directory is needed for the piano transcription model
+docker run --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
 ```
 
 The local `output` directory is mounted at `/app/output` in the container.
@@ -24,6 +26,8 @@ The local `output` directory is mounted at `/app/output` in the container.
 Run with different arguments as needed:
 
 ```bash
-docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest --audio-file /app/output/your-audio-file.wav
-docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest --help
+docker run --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest --audio-file output/1_raw_audio.wav
+docker run --gpus all --rm -v $(pwd)/output:/app/output audio-pond:latest --midi-file output/2_transcription_split.midi --no-trim --no-split --key 1=g,28=c
+docker run --gpus all --rm -v $(pwd)/output:/app/output audio-pond:latest --ly-file output/3_lilypond.ly
+docker run --rm audio-pond:latest --help
 ```

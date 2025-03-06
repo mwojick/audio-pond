@@ -105,7 +105,8 @@ def main(
             )
 
         ly_path = processor.transform_to_parallel_music(ly_path)
-        processor.render_sheet_music(ly_path)
+        # absolute path needed in docker container
+        processor.render_sheet_music(ly_path.absolute())
 
         click.echo(f"Sheet music has been generated in {output_dir}")
 
