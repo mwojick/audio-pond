@@ -192,7 +192,7 @@ class LilypondConverter:
 
             # Add bar number comment (except for \fine)
             if not is_fine_bar:
-                output_content += f"  %   bar {i+1}\n"
+                output_content += f"  % bar {i+1}\n"
 
             # Add bars from each track
             for track_idx, bars in enumerate(track_bars):
