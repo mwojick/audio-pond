@@ -13,29 +13,17 @@ This guide explains how to build and run Audio Pond in a Docker container.
 docker build -t audio-pond:latest .
 ```
 
-## Creating a Container
+## Running Commands
 
 ```bash
-docker create --name audio-pond-container -v $(pwd)/output:/app/output audio-pond:latest
+docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
 ```
 
 The local `output` directory is mounted at `/app/output` in the container.
 
-## Running Commands with the Container
-
-```bash
-docker start -a audio-pond-container https://www.youtube.com/watch?v=your-video-id
-```
-
 Run with different arguments as needed:
 
 ```bash
-docker start -a audio-pond-container --audio-file /app/output/your-audio-file.wav
-```
-
-If you need to update the image, remove the container and create a new one:
-
-```bash
-docker rm audio-pond-container
-# Then create a new container as shown above
+docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest --audio-file /app/output/your-audio-file.wav
+docker run --rm --gpus all -v $(pwd)/output:/app/output audio-pond:latest --help
 ```
