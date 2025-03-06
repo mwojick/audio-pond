@@ -41,6 +41,5 @@ class MidiTranscriber:
         midi_output_path = self.output_dir / "2_transcription.midi"
 
         # Transcribe and write out to MIDI file
-        transcribed_dict = transcriptor.transcribe(audio, str(midi_output_path))
-        print(transcribed_dict)
+        transcriptor.transcribe(audio, str(midi_output_path))
         return midi_output_path

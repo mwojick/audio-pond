@@ -185,6 +185,8 @@ scipy==1.15.1
     # via
     #   librosa
     #   scikit-learn
+setuptools==75.8.2
+    # via torch
 six==1.17.0
     # via python-dateutil
 soundfile==0.13.1
@@ -217,7 +219,6 @@ triton==3.2.0
     # via torch
 typing-extensions==4.12.2
     # via
-    #   ipython
     #   librosa
     #   torch
 urllib3==2.3.0
