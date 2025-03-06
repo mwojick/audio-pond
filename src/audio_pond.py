@@ -5,7 +5,7 @@ import click
 from pathlib import Path
 from dotenv import load_dotenv
 
-from src.processors.audio_processor import AudioProcessor
+from src.processors.audio_processor import AudioProcessor, ProcessorConfig
 
 # Load environment variables from .env file
 load_dotenv()
@@ -78,36 +78,24 @@ def main(
     quant: str,
 ):
     """Convert piano performances into sheet music."""
-    processor = AudioProcessor(Path(output_dir))
+    output_path = Path(output_dir)
+    processor = AudioProcessor(output_path)
+
+    config = ProcessorConfig(
+        source=source,
+        output_dir=output_path,
+        audio_file=audio_file,
+        midi_file=midi_file,
+        ly_file=ly_file,
+        no_trim=no_trim,
+        no_split=no_split,
+        time=time,
+        key=key,
+        quant=quant,
+    )
 
     try:
-        if ly_file:
-            ly_path = Path(source)
-        elif midi_file:
-            midi_path = Path(source)
-        else:
-            if audio_file:
-                audio_path = processor.process_audio_file(Path(source))
-            else:
-                audio_path = processor.process_youtube(source)
-
-            midi_path = processor.transcribe_audio(audio_path)
-
-        if not ly_file:
-            if not no_trim:
-                midi_path = processor.trim_midi_silence(midi_path)
-
-            if not no_split:
-                midi_path = processor.split_midi_tracks(midi_path)
-
-            ly_path = processor.midi_to_lilypond(
-                midi_path, time=time, key=key, quant=quant
-            )
-
-        ly_path = processor.transform_to_parallel_music(ly_path)
-        # absolute path needed in docker container
-        processor.render_sheet_music(ly_path.absolute())
-
+        processor.run(config)
         click.echo(f"Sheet music has been generated in {output_dir}")
 
     except Exception as e:

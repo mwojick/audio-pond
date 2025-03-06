@@ -30,4 +30,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     bash -c 'direnv exec . uv pip install -r requirements.txt'
 
 COPY src/ src/
-ENTRYPOINT ["bash", "-c", "direnv exec . .venv/bin/python -m src.audio_pond \"$@\"", "bash"]
+ENTRYPOINT ["bash", "-c", "direnv exec . python -m src.audio_pond \"$@\"", "bash"]
