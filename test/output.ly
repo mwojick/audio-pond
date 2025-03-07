@@ -1,6 +1,14 @@
-% created by MidiToLily version 1.0.0.6
-\version "2.24.3"
+\version "2.24.4"
 \language "english"
+
+\header {
+  title = "Title"
+  subtitle = "Subtitle"
+  composer = "Composer"
+  arranger = "Arranger"
+  tagline = ""
+}
+
 \parallelMusic voiceA,voiceB {
   % bar 1
   \key g \major
@@ -31,8 +39,10 @@
   \fine |
   \fine |
 }
+
 \score {
-  \new PianoStaff <<
+  \new PianoStaff \with { instrumentName = "Piano" }
+  <<
     \new Staff = "up" { \voiceA }
     \new Staff = "down" { \voiceB }
   >>

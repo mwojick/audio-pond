@@ -4,6 +4,7 @@ import os
 import subprocess
 import logging
 from pathlib import Path
+import textwrap
 
 
 class LilypondConverter:
@@ -116,13 +117,21 @@ class LilypondConverter:
         if not input_path.exists():
             raise FileNotFoundError(f"Input LilyPond file not found: {input_path}")
 
-        # Read the input file
         with open(input_path, "r") as f:
             content = f.read()
 
-        # Extract the header information (everything before the first track)
-        header_end = content.find('"track1"')
-        header = content[:header_end].strip()
+        header = textwrap.dedent("""\
+            \\version "2.24.4"
+            \language "english"
+
+            \header {
+              title = "Title"
+              subtitle = "Subtitle"
+              composer = "Composer"
+              arranger = "Arranger"
+              tagline = ""
+            }
+            """)
 
         # Extract the two tracks
         tracks = []
@@ -210,16 +219,18 @@ class LilypondConverter:
         output_content = output_content.replace("\\fine\n", "\\fine |\n")
         output_content += "}\n"
 
-        # Add the score section
-        output_content += """\\score {
-  \\new PianoStaff <<
-    \\new Staff = "up" { \\voiceA }
-    \\new Staff = "down" { \\voiceB }
-  >>
-  \\layout {}
-  \\midi {}
-}
-"""
+        output_content += textwrap.dedent("""\
+
+            \score {
+              \\new PianoStaff \with { instrumentName = "Piano" }
+              <<
+                \\new Staff = "up" { \\voiceA }
+                \\new Staff = "down" { \\voiceB }
+              >>
+              \layout {}
+              \midi {}
+            }
+            """)
 
         # Write the output file
         output_path = input_path.with_stem(f"{input_path.stem}_parallel")
