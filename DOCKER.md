@@ -2,9 +2,9 @@
 
 This guide explains how to build and run Audio Pond in a Docker container.
 
-## Files
+## Relevant Files
 
-- `flake.nix`: Defines the Nix development environment with system dependencies
+- `flake.nix`: Defines the Nix development environment with system dependencies such as ffmpeg, wine, lilypond, etc.
 - `Dockerfile`: Creates a Docker image using Nix for system dependencies and uv for Python dependencies
 
 ## Building the Docker Image
@@ -20,8 +20,8 @@ docker build -t audio-pond:latest .
 docker run -it --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest https://www.youtube.com/watch?v=your-video-id
 ```
 
-- `/usr/lib/wsl/lib` directory is needed when running on Windows with WSL so pytorch can find the GPU
-- `~/piano_transcription_inference_data` directory is needed for the piano transcription model
+- `/usr/lib/wsl/lib` directory is needed when running on Windows with WSL so pytorch can find the GPU. If you don't have an Nvidia GPU, the transcription model will fallback to using the CPU.
+- `~/piano_transcription_inference_data` directory is needed to cache the piano transcription model.
 - The local `output` directory is mounted at `/app/output` in the container.
 
 Run with different arguments as needed:
