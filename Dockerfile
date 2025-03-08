@@ -1,20 +1,10 @@
-FROM ubuntu:24.04
-
-# Utilities needed to install Nix and fonts for LilyPond
-RUN apt-get update && apt-get install -y \
-    curl \
-    xz-utils \
-    fontconfig
-
-# Install Nix
-RUN curl -L https://nixos.org/nix/install | sh -s -- --daemon --yes
+FROM nixos/nix:2.26.3
 
 # Enable flakes
 RUN mkdir -p /etc/nix
 RUN echo "experimental-features = nix-command flakes" >/etc/nix/nix.conf
 
 # Install direnv and nix-direnv
-ENV PATH="/root/.nix-profile/bin:${PATH}"
 RUN nix profile install nixpkgs#direnv nixpkgs#nix-direnv
 RUN mkdir -p /root/.config/direnv
 RUN echo 'source $HOME/.nix-profile/share/nix-direnv/direnvrc' >/root/.config/direnv/direnvrc

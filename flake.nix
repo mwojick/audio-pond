@@ -19,9 +19,11 @@
           packages = (with pkgs; [
             ffmpeg
             wine64
-            lilypond
+            lilypond-unstable
             python312
             wget
+            fontconfig
+            dejavu_fonts
             stdenv.cc.cc.lib
             makeWrapper
           ]) ++ (with pkgs.python312Packages; [ uv ruff ]);
@@ -37,6 +39,8 @@
               wrapProgram "$PWD/$venvDir/bin/python" \
                 --prefix LD_LIBRARY_PATH : "${pkgs.stdenv.cc.cc.lib}/lib:/usr/lib/wsl/lib"
             fi
+
+            export FONTCONFIG_FILE="${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
 
             echo "Activating venv..."
             source "$venvDir/bin/activate"

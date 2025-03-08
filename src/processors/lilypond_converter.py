@@ -121,10 +121,10 @@ class LilypondConverter:
             content = f.read()
 
         header = textwrap.dedent("""\
-            \\version "2.24.4"
-            \language "english"
+            \\version "2.25.20"
+            \\language "english"
 
-            \header {
+            \\header {
               title = "Title"
               subtitle = "Subtitle"
               composer = "Composer"
@@ -221,14 +221,14 @@ class LilypondConverter:
 
         output_content += textwrap.dedent("""\
 
-            \score {
-              \\new PianoStaff \with { instrumentName = "Piano" }
+            \\score {
+              \\new PianoStaff \\with { instrumentName = "Piano" }
               <<
                 \\new Staff = "up" { \\voiceA }
                 \\new Staff = "down" { \\voiceB }
               >>
-              \layout {}
-              \midi {}
+              \\layout {}
+              \\midi {}
             }
             """)
 
