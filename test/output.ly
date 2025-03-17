@@ -1,4 +1,5 @@
-\version "2.24.4"
+\include "articulate.ly"
+\version "2.25.20"
 \language "english"
 
 \header {
@@ -9,7 +10,15 @@
   tagline = ""
 }
 
+global = {
+  \numericTimeSignature
+}
+
+cd = \change Staff = "down"
+cu = \change Staff = "up"
+
 \parallelMusic voiceA,voiceB {
+  \global
   % bar 1
   \key g \major
   \time 4/4
@@ -40,12 +49,21 @@
   \fine |
 }
 
-\score {
+music = {
   \new PianoStaff \with { instrumentName = "Piano" }
   <<
     \new Staff = "up" { \voiceA }
     \new Staff = "down" { \voiceB }
   >>
+}
+
+\score {
+  \music
   \layout {}
+}
+
+\score {
+  \articulate
+  \music
   \midi {}
 }

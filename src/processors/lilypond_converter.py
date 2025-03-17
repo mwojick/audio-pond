@@ -121,6 +121,7 @@ class LilypondConverter:
             content = f.read()
 
         header = textwrap.dedent("""\
+            \\include "articulate.ly"
             \\version "2.25.20"
             \\language "english"
 
@@ -131,6 +132,16 @@ class LilypondConverter:
               arranger = "Arranger"
               tagline = ""
             }
+
+            global = {
+              \\numericTimeSignature
+            }
+
+            cd = \\change Staff = "down"
+            cu = \\change Staff = "up"
+
+            \\parallelMusic voiceA,voiceB {
+              \\global
             """)
 
         # Extract the two tracks
@@ -187,8 +198,7 @@ class LilypondConverter:
 
             track_bars.append(bars)
 
-        # Create the output content with parallelMusic
-        output_content = f"{header}\n\\parallelMusic voiceA,voiceB {{\n"
+        output_content = f"{header}"
 
         # Combine corresponding bars from both tracks
         max_bars = max(len(track_bars[0]), len(track_bars[1]))
@@ -217,17 +227,25 @@ class LilypondConverter:
 
         # Close the parallelMusic section and add the | after \fine
         output_content = output_content.replace("\\fine\n", "\\fine |\n")
-        output_content += "}\n"
+        output_content += "}\n\n"
 
         output_content += textwrap.dedent("""\
-
-            \\score {
+            music = {
               \\new PianoStaff \\with { instrumentName = "Piano" }
               <<
                 \\new Staff = "up" { \\voiceA }
                 \\new Staff = "down" { \\voiceB }
               >>
+            }
+
+            \\score {
+              \\music
               \\layout {}
+            }
+
+            \\score {
+              \\articulate
+              \\music
               \\midi {}
             }
             """)
