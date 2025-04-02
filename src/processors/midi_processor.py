@@ -137,10 +137,9 @@ class MidiProcessor:
             bass_track.append(msg)
 
         # Ensure each track ends with an end_of_track message
-        if treble_track[-1].type != "end_of_track":
-            treble_track.append(MetaMessage("end_of_track", time=0))
-        if bass_track[-1].type != "end_of_track":
-            bass_track.append(MetaMessage("end_of_track", time=0))
+        for track in [treble_track, bass_track]:
+            if track[-1].type != "end_of_track":
+                track.append(MetaMessage("end_of_track", time=0))
 
         # Save the new MIDI file
         output_path = self.output_dir / "2_transcription_split.midi"
