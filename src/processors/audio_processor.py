@@ -21,9 +21,11 @@ class ProcessorConfig:
     ly_file: bool = False
     no_trim: bool = False
     no_split: bool = False
+    no_tempo_adjust: bool = False
     time: str = "1=4/4"
     key: str = "1=c"
     quant: str = "16"
+    bpm: float = 120
 
 
 class AudioProcessor:
@@ -71,6 +73,11 @@ class AudioProcessor:
         if not config.ly_file:
             if not config.no_trim:
                 midi_path = self.midi_processor.trim_midi_silence(midi_path)
+
+            if not config.no_tempo_adjust:
+                midi_path = self.midi_processor.adjust_note_durations(
+                    midi_path, config.bpm
+                )
 
             if not config.no_split:
                 midi_path = self.midi_processor.split_midi_tracks(midi_path)

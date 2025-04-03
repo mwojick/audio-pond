@@ -48,6 +48,11 @@ logging.basicConfig(
     help="Skip splitting MIDI file into treble and bass tracks",
 )
 @click.option(
+    "--no-tempo-adjust",
+    is_flag=True,
+    help="Skip adjusting note durations to match the target tempo",
+)
+@click.option(
     "--time",
     type=str,
     default="1=4/4",
@@ -65,6 +70,12 @@ logging.basicConfig(
     default="16",
     help="Quantize note start and end times to the specified duration (1=whole, 2=half, 4=quarter, etc.)",
 )
+@click.option(
+    "--bpm",
+    type=float,
+    default=120,
+    help="BPM of the piece",
+)
 def main(
     source: str,
     audio_file: bool,
@@ -73,9 +84,11 @@ def main(
     output_dir: str,
     no_trim: bool,
     no_split: bool,
+    no_tempo_adjust: bool,
     time: str,
     key: str,
     quant: str,
+    bpm: float,
 ):
     """Convert piano performances into sheet music."""
     output_path = Path(output_dir)
@@ -89,9 +102,11 @@ def main(
         ly_file=ly_file,
         no_trim=no_trim,
         no_split=no_split,
+        no_tempo_adjust=no_tempo_adjust,
         time=time,
         key=key,
         quant=quant,
+        bpm=bpm,
     )
 
     try:

@@ -64,6 +64,38 @@ class MidiProcessor:
 
         return output_path
 
+    def adjust_note_durations(self, midi_path: Path, target_bpm: float) -> Path:
+        """Adjust note durations to match the target tempo, accounting for the transcriber's 120 BPM assumption.
+
+        Args:
+            midi_path: Path to the input MIDI file
+            target_bpm: The actual BPM the piece should be played at
+
+        Returns:
+            Path to the duration-adjusted MIDI file
+        """
+        # Load the file
+        mid = MidiFile(str(midi_path))
+
+        # Calculate scale factor based on the transcriber's 120 BPM assumption
+        scale_factor = target_bpm / 120.0
+
+        for track in mid.tracks:
+            for msg in track:
+                if msg.type == "set_tempo":
+                    # Tempo is in microseconds per beat
+                    msg.tempo = int(msg.tempo / scale_factor)
+
+                # Scale all time values
+                elif hasattr(msg, "time"):
+                    msg.time = int(msg.time * scale_factor)
+
+        # Save the adjusted MIDI file
+        output_path = self.output_dir / "2_transcription_duration_adjusted.midi"
+        mid.save(str(output_path))
+
+        return output_path
+
     def split_midi_tracks(self, midi_path: Path) -> Path:
         """Split MIDI file into treble and bass tracks.
 
@@ -109,7 +141,7 @@ class MidiProcessor:
             elif msg.type == "time_signature":
                 bass_msgs.append((msg, time))
                 treble_msgs.append((msg, time))
-            elif msg.type == "note_on":
+            elif msg.type == "note_on" or msg.type == "note_off":
                 if msg.note >= NOTE_THRESHOLD:
                     # upper voice
                     msg.channel = 0
