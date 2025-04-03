@@ -40,7 +40,7 @@ Optional, in case wine doesn't work:
 ### Convert from YouTube:
 
 ```bash
-python -m src.audio_pond https://www.youtube.com/watch?v=your-video-id --key 1=g,28=c
+python -m src.audio_pond https://www.youtube.com/watch?v=your-video-id --key 1=g,28=c --bpm 94
 ```
 
 ### Convert from local audio file:
@@ -64,17 +64,20 @@ python -m src.audio_pond --midi-file path/to/your/midi/file.mid
 - `--output-dir`: Specify output directory (default: ./output)
 - `--no-trim`: Skip trimming silence from start of MIDI file before conversion
 - `--no-split`: Skip splitting MIDI file into treble and bass tracks
+- `--no-tempo-adjust`: Skip adjusting note durations to match the target tempo
 - `--time`: Time signature for LilyPond output
 - `--key`: Key signature for LilyPond output
 - `--quant`: Quantization value for LilyPond output
+- `--bpm`: BPM of the piece
 
 ## Output Files
 
-For each conversion, the following files will be generated in the output directory:
+For each conversion, the following files will be generated in the output directory (in order):
 
 - `1_raw_audio.wav`: Extracted audio from source
 - `2_transcription.midi`: Transcribed MIDI
 - `2_transcription_trimmed.midi`: Transcribed MIDI with initial silence removed
+- `2_transcription_tempo_adjusted.midi`: Transcribed MIDI with note durations adjusted to match the target tempo
 - `2_transcription_split.midi`: Transcribed MIDI split into treble and bass tracks
 - `3_lilypond.ly`: LilyPond notation
 - `3_lilypond_parallel.ly`: LilyPond notation with parallelMusic (for easier editing)

@@ -31,7 +31,7 @@ Run with different arguments as needed:
 docker run -it --rm --gpus all -v /usr/lib/wsl/lib:/usr/lib/wsl/lib -v ~/piano_transcription_inference_data:/root/piano_transcription_inference_data -v $(pwd)/output:/app/output audio-pond:latest --audio-file output/1_raw_audio.wav
 
 # Process local MIDI file
-docker run -it --rm -v $(pwd)/output:/app/output audio-pond:latest --midi-file output/2_transcription_split.midi --no-trim --no-split --key 1=g,28=c
+docker run -it --rm -v $(pwd)/output:/app/output audio-pond:latest --midi-file output/2_transcription_split.midi --no-trim --no-split --no-tempo-adjust --key 1=g,28=c
 
 # Process local LilyPond file
 docker run -it --rm -v $(pwd)/output:/app/output audio-pond:latest --ly-file output/3_lilypond.ly
